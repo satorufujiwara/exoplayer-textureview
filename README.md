@@ -62,6 +62,7 @@ And play or pause.
 ```java
 videoTexturePresenter.play();
 videoTexturePresenter.seekTo(0);
+videoTexturePresenter.setMute(true);
 videoTexturePresenter.pause();
 ```
 
