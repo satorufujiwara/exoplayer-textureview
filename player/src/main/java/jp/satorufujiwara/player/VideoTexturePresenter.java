@@ -170,11 +170,22 @@ public class VideoTexturePresenter implements Player.Listener,
         player.seekTo(0);
     }
 
+    public void mute() {
+        player.selectTrack(Player.TYPE_AUDIO, Player.DISABLED_TRACK);
+    }
+
     public void seekTo(final long positionMs) {
         if (player == null) {
             return;
         }
         player.seekTo(positionMs);
+    }
+
+    public void setMute(final boolean isMute) {
+        if (player == null) {
+            return;
+        }
+        player.setMute(isMute);
     }
 
     public long getDuration() {

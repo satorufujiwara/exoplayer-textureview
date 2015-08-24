@@ -67,11 +67,13 @@ public class Player implements ExoPlayer.Listener {
     private Surface surface;
     private TrackRenderer videoRenderer;
     private int videoTrackToRestore;
+    private int audioTrackToRestore;
 
     private MultiTrackChunkSource[] multiTrackSources;
     private String[][] trackNames;
     private int[] selectedTracks;
     private boolean backgrounded;
+    private boolean isMute;
 
     public Player() {
         eventProxy = new EventProxy();
@@ -175,6 +177,19 @@ public class Player implements ExoPlayer.Listener {
         }
     }
 
+    public void setMute(boolean isMute) {
+        if (this.isMute == isMute) {
+            return;
+        }
+        this.isMute = isMute;
+        if (isMute) {
+            audioTrackToRestore = getSelectedTrackIndex(TYPE_AUDIO);
+            selectTrack(TYPE_AUDIO, DISABLED_TRACK);
+        } else {
+            selectTrack(TYPE_AUDIO, audioTrackToRestore);
+        }
+    }
+
     public void prepare() {
         if (rendererBuildingState == RENDERER_BUILDING_STATE_BUILT) {
             player.stop();
@@ -242,16 +257,24 @@ public class Player implements ExoPlayer.Listener {
      * Invoked with the results from a {@link RendererBuilder}.
      *
      * @param trackNames        The names of the available tracks, indexed by {@link Player} TYPE_*
-     *                          constants. May be null if the track names are unknown. An individual element may be null
+     *                          constants. May be null if the track names are unknown. An
+     *                          individual
+     *                          element may be null
      *                          if the track names are unknown for the corresponding type.
      * @param multiTrackSources Sources capable of switching between multiple available tracks,
-     *                          indexed by {@link Player} TYPE_* constants. May be null if there are no types with
-     *                          multiple tracks. An individual element may be null if it does not have multiple tracks.
+     *                          indexed by {@link Player} TYPE_* constants. May be null if there
+     *                          are
+     *                          no types with
+     *                          multiple tracks. An individual element may be null if it does not
+     *                          have multiple tracks.
      * @param renderers         Renderers indexed by {@link Player} TYPE_* constants. An individual
-     *                          element may be null if there do not exist tracks of the corresponding type.
-     * @param bandwidthMeter    Provides an estimate of the currently available bandwidth. May be null.
+     *                          element may be null if there do not exist tracks of the
+     *                          corresponding type.
+     * @param bandwidthMeter    Provides an estimate of the currently available bandwidth. May be
+     *                          null.
      */
-    void invokeOnRenderersBuilt(String[][] trackNames, MultiTrackChunkSource[] multiTrackSources, TrackRenderer[] renderers,
+    void invokeOnRenderersBuilt(String[][] trackNames, MultiTrackChunkSource[] multiTrackSources,
+            TrackRenderer[] renderers,
             BandwidthMeter bandwidthMeter) {
         // Normalize the results.
         if (trackNames == null) {
@@ -305,7 +328,8 @@ public class Player implements ExoPlayer.Listener {
     private void maybeReportPlayerState() {
         boolean playWhenReady = player.getPlayWhenReady();
         int playbackState = getPlaybackState();
-        if (lastReportedPlayWhenReady != playWhenReady || lastReportedPlaybackState != playbackState) {
+        if (lastReportedPlayWhenReady != playWhenReady
+                || lastReportedPlaybackState != playbackState) {
             for (Listener listener : listeners) {
                 listener.onStateChanged(playWhenReady, playbackState);
             }
@@ -319,9 +343,11 @@ public class Player implements ExoPlayer.Listener {
             return;
         }
         if (blockForSurfacePush) {
-            player.blockingSendMessage(videoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE, surface);
+            player.blockingSendMessage(videoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE,
+                    surface);
         } else {
-            player.sendMessage(videoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE, surface);
+            player.sendMessage(videoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE,
+                    surface);
         }
     }
 
