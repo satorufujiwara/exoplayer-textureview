@@ -25,6 +25,45 @@ dependencies {
 
 # Usage
 
+Create instance and bind to `Fragment`'s or `Activity`'s lifecycle.
+
+```java
+@Override
+public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    super.onViewCreated(view, savedInstanceState);
+    videoTexturePresenter = new VideoTexturePresenter(videoTextureView);
+    VideoSource source = new VideoSource(Uri.parse("hls playlist url."), VideoSource.Type.HLS);
+    videoTexturePresenter.setSource(source, "UserAgent");
+    videoTexturePresenter.prepare();
+}
+
+@Override
+public void onResume() {
+    super.onResume();
+    videoTexturePresenter.onResume();
+}
+
+@Override
+public void onPause() {
+    videoTexturePresenter.onPause();
+    super.onPause();
+}
+
+@Override
+public void onDestroyView() {
+    videoTexturePresenter.release();
+    super.onDestroyView();
+}
+```
+
+And play or pause.
+
+```java
+videoTexturePresenter.play();
+videoTexturePresenter.seekTo(0);
+videoTexturePresenter.pause();
+```
+
 License
 -------
 
