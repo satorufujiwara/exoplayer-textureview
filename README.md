@@ -11,6 +11,7 @@ exoplayer-textureview
 # Features
 * Play HLS playlist
 * Set bitrate limit
+* Mute / unmute
 
 # Gradle
 
