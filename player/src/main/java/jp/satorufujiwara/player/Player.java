@@ -1,5 +1,7 @@
 package jp.satorufujiwara.player;
 
+import android.view.Surface;
+
 import com.google.android.exoplayer.DummyTrackRenderer;
 import com.google.android.exoplayer.ExoPlaybackException;
 import com.google.android.exoplayer.ExoPlayer;
@@ -9,8 +11,6 @@ import com.google.android.exoplayer.chunk.MultiTrackChunkSource;
 import com.google.android.exoplayer.text.Cue;
 import com.google.android.exoplayer.upstream.BandwidthMeter;
 import com.google.android.exoplayer.util.PlayerControl;
-
-import android.view.Surface;
 
 import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -226,6 +226,10 @@ public class Player implements ExoPlayer.Listener {
 
     public int getBufferedPercentage() {
         return player.getBufferedPercentage();
+    }
+
+    public long getBufferedPosition() {
+        return player.getBufferedPosition();
     }
 
     public boolean getPlayWhenReady() {
