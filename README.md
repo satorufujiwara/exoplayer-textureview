@@ -20,7 +20,7 @@ repositories {
     jcenter()
 }
 dependencies {
-    compile 'jp.satorufujiwara:exoplayer-textureview:0.1.1'
+    compile 'jp.satorufujiwara:exoplayer-textureview:0.1.2'
 }
 ```
 
