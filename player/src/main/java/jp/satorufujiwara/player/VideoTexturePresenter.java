@@ -1,11 +1,11 @@
 package jp.satorufujiwara.player;
 
-import com.google.android.exoplayer.audio.AudioCapabilities;
-import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
-
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.TextureView;
+
+import com.google.android.exoplayer.audio.AudioCapabilities;
+import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
 
 import jp.satorufujiwara.player.hls.HlsRendererBuilder;
 
@@ -190,6 +190,14 @@ public class VideoTexturePresenter implements Player.Listener,
 
     public long getCurrentPosition() {
         return player == null ? 0 : player.getCurrentPosition();
+    }
+
+    public int getBufferedPercentage() {
+        return player == null ? 0 :player.getBufferedPercentage();
+    }
+
+    public long getBufferedPosition() {
+        return player == null ? 0 :player.getBufferedPosition();
     }
 
     private RendererBuilder createRendererBuilder(final VideoSource source,
