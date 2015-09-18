@@ -1,11 +1,11 @@
 package jp.satorufujiwara.player;
 
+import com.google.android.exoplayer.audio.AudioCapabilities;
+import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
+
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.TextureView;
-
-import com.google.android.exoplayer.audio.AudioCapabilities;
-import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
 
 import jp.satorufujiwara.player.hls.HlsRendererBuilder;
 
@@ -94,6 +94,7 @@ public class VideoTexturePresenter implements Player.Listener,
 
     public void onPause() {
         audioCapabilitiesReceiver.unregister();
+        playerNeedsPrepare = true;
     }
 
     public Callbacks callback() {
@@ -124,9 +125,10 @@ public class VideoTexturePresenter implements Player.Listener,
         player = new Player();
         player.addListener(this);
         playerNeedsPrepare = true;
-        if (rendererBuilder != null) {
-            player.setRendererBuilder(rendererBuilder);
+        if (rendererBuilder == null) {
+            return;
         }
+        player.setRendererBuilder(rendererBuilder);
     }
 
     public void release() {
@@ -145,8 +147,6 @@ public class VideoTexturePresenter implements Player.Listener,
         }
         if (rendererBuilder == null) {
             return;
-        } else {
-            player.setRendererBuilder(rendererBuilder);
         }
         if (playerNeedsPrepare) {
             player.prepare();
@@ -193,11 +193,11 @@ public class VideoTexturePresenter implements Player.Listener,
     }
 
     public int getBufferedPercentage() {
-        return player == null ? 0 :player.getBufferedPercentage();
+        return player == null ? 0 : player.getBufferedPercentage();
     }
 
     public long getBufferedPosition() {
-        return player == null ? 0 :player.getBufferedPosition();
+        return player == null ? 0 : player.getBufferedPosition();
     }
 
     private RendererBuilder createRendererBuilder(final VideoSource source,
