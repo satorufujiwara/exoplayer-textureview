@@ -26,7 +26,7 @@ dependencies {
 
 # Usage
 
-Create instance and bind to `Fragment`'s or `Activity`'s lifecycle.
+Create `VideoTexturePresenter`'s instance and bind to `Fragment`'s or `Activity`'s lifecycle.
 
 ```java
 @Override
