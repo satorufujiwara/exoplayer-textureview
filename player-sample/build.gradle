@@ -5,7 +5,7 @@ android {
     buildToolsVersion BUILD_TOOLS_VERSION
 
     defaultConfig {
-        applicationId "jp.satorufujiwara.binder.sample"
+        applicationId "jp.satorufujiwara.player.sample"
         minSdkVersion MIN_SDK_VERSION as int
         targetSdkVersion TARGET_SDK_VERSION as int
         versionCode 1
