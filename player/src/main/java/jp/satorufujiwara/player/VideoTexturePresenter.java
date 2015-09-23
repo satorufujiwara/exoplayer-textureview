@@ -216,6 +216,10 @@ public class VideoTexturePresenter implements Player.Listener,
         return player != null && player.getPlayWhenReady();
     }
 
+    public int getPlaybackState() {
+        return player == null ? -1 : player.getPlaybackState();
+    }
+
     public static class Callbacks {
 
         private OnStateChangedListener onStateChangedListener;
