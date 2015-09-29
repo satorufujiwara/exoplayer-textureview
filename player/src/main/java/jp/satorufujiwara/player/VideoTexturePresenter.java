@@ -119,11 +119,10 @@ public class VideoTexturePresenter implements Player.Listener,
     }
 
     public void prepare() {
-        if (player != null) {
-            return;
+        if (player == null) {
+            player = new Player();
+            player.addListener(this);
         }
-        player = new Player();
-        player.addListener(this);
         playerNeedsPrepare = true;
         if (rendererBuilder == null) {
             return;
