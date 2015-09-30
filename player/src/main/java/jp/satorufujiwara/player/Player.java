@@ -1,16 +1,16 @@
 package jp.satorufujiwara.player;
 
-import android.view.Surface;
-
 import com.google.android.exoplayer.DummyTrackRenderer;
 import com.google.android.exoplayer.ExoPlaybackException;
 import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
+import com.google.android.exoplayer.MediaFormat;
 import com.google.android.exoplayer.TrackRenderer;
-import com.google.android.exoplayer.chunk.MultiTrackChunkSource;
 import com.google.android.exoplayer.text.Cue;
 import com.google.android.exoplayer.upstream.BandwidthMeter;
 import com.google.android.exoplayer.util.PlayerControl;
+
+import android.view.Surface;
 
 import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -31,7 +31,8 @@ public class Player implements ExoPlayer.Listener {
 
         void onError(Exception e);
 
-        void onVideoSizeChanged(int width, int height, float pixelWidthHeightRatio);
+        void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees,
+                float pixelWidthHeightRatio);
     }
 
     // Constants pulled into this class for convenience.
@@ -41,8 +42,8 @@ public class Player implements ExoPlayer.Listener {
     public static final int STATE_READY = ExoPlayer.STATE_READY;
     public static final int STATE_ENDED = ExoPlayer.STATE_ENDED;
 
-    public static final int DISABLED_TRACK = -1;
-    public static final int PRIMARY_TRACK = 0;
+    public static final int TRACK_DISABLED = ExoPlayer.TRACK_DISABLED;
+    public static final int TRACK_DEFAULT = ExoPlayer.TRACK_DEFAULT;
 
     public static final int RENDERER_COUNT = 4;
     public static final int TYPE_VIDEO = 0;
@@ -69,9 +70,6 @@ public class Player implements ExoPlayer.Listener {
     private int videoTrackToRestore;
     private int audioTrackToRestore;
 
-    private MultiTrackChunkSource[] multiTrackSources;
-    private String[][] trackNames;
-    private int[] selectedTracks;
     private boolean backgrounded;
     private boolean isMute;
 
@@ -84,9 +82,8 @@ public class Player implements ExoPlayer.Listener {
         listeners = new CopyOnWriteArrayList<>();
         lastReportedPlaybackState = STATE_IDLE;
         rendererBuildingState = RENDERER_BUILDING_STATE_IDLE;
-        selectedTracks = new int[RENDERER_COUNT];
         // Disable text initially.
-        selectedTracks[TYPE_TEXT] = DISABLED_TRACK;
+        player.setSelectedTrack(TYPE_TEXT, TRACK_DISABLED);
     }
 
     @Override
@@ -141,26 +138,26 @@ public class Player implements ExoPlayer.Listener {
     }
 
     public int getTrackCount(int type) {
-        return !player.getRendererHasMedia(type) ? 0 : trackNames[type].length;
+        return player.getTrackCount(type);
     }
 
-    public String getTrackName(int type, int index) {
-        return trackNames[type][index];
+    public MediaFormat getTrackFormat(int type, int index) {
+        return player.getTrackFormat(type, index);
     }
 
-    public int getSelectedTrackIndex(int type) {
-        return selectedTracks[type];
+    public int getSelectedTrack(int type) {
+        return player.getSelectedTrack(type);
     }
 
-    public void selectTrack(int type, int index) {
-        if (selectedTracks[type] == index) {
-            return;
-        }
-        selectedTracks[type] = index;
-        pushTrackSelection(type, true);
-        if (type == TYPE_TEXT && index == DISABLED_TRACK) {
+    public void setSelectedTrack(int type, int index) {
+        player.setSelectedTrack(type, index);
+        if (type == TYPE_TEXT && index < 0) {
             eventProxy.invokeOnCues(Collections.<Cue>emptyList());
         }
+    }
+
+    public boolean getBackgrounded() {
+        return backgrounded;
     }
 
     public void setBackgrounded(boolean backgrounded) {
@@ -169,11 +166,11 @@ public class Player implements ExoPlayer.Listener {
         }
         this.backgrounded = backgrounded;
         if (backgrounded) {
-            videoTrackToRestore = getSelectedTrackIndex(TYPE_VIDEO);
-            selectTrack(TYPE_VIDEO, DISABLED_TRACK);
+            videoTrackToRestore = getSelectedTrack(TYPE_VIDEO);
+            setSelectedTrack(TYPE_VIDEO, TRACK_DISABLED);
             blockingClearSurface();
         } else {
-            selectTrack(TYPE_VIDEO, videoTrackToRestore);
+            setSelectedTrack(TYPE_VIDEO, videoTrackToRestore);
         }
     }
 
@@ -183,10 +180,10 @@ public class Player implements ExoPlayer.Listener {
         }
         this.isMute = isMute;
         if (isMute) {
-            audioTrackToRestore = getSelectedTrackIndex(TYPE_AUDIO);
-            selectTrack(TYPE_AUDIO, DISABLED_TRACK);
+            audioTrackToRestore = getSelectedTrack(TYPE_AUDIO);
+            setSelectedTrack(TYPE_AUDIO, TRACK_DISABLED);
         } else {
-            selectTrack(TYPE_AUDIO, audioTrackToRestore);
+            setSelectedTrack(TYPE_AUDIO, audioTrackToRestore);
         }
     }
 
@@ -197,7 +194,6 @@ public class Player implements ExoPlayer.Listener {
         rendererBuilder.cancel();
         eventProxy.setVideoFormat(null);
         videoRenderer = null;
-        multiTrackSources = null;
         rendererBuildingState = RENDERER_BUILDING_STATE_BUILDING;
         maybeReportPlayerState();
         rendererBuilder.buildRenderers(eventProxy);
@@ -260,53 +256,22 @@ public class Player implements ExoPlayer.Listener {
     /**
      * Invoked with the results from a {@link RendererBuilder}.
      *
-     * @param trackNames        The names of the available tracks, indexed by {@link Player} TYPE_*
-     *                          constants. May be null if the track names are unknown. An
-     *                          individual
-     *                          element may be null
-     *                          if the track names are unknown for the corresponding type.
-     * @param multiTrackSources Sources capable of switching between multiple available tracks,
-     *                          indexed by {@link Player} TYPE_* constants. May be null if there
-     *                          are
-     *                          no types with
-     *                          multiple tracks. An individual element may be null if it does not
-     *                          have multiple tracks.
-     * @param renderers         Renderers indexed by {@link Player} TYPE_* constants. An individual
-     *                          element may be null if there do not exist tracks of the
-     *                          corresponding type.
-     * @param bandwidthMeter    Provides an estimate of the currently available bandwidth. May be
-     *                          null.
+     * @param renderers      Renderers indexed by {@link Player} TYPE_* constants. An individual
+     *                       element may be null if there do not exist tracks of the corresponding
+     *                       type.
+     * @param bandwidthMeter Provides an estimate of the currently available bandwidth. May be
+     *                       null.
      */
-    void invokeOnRenderersBuilt(String[][] trackNames, MultiTrackChunkSource[] multiTrackSources,
-            TrackRenderer[] renderers,
-            BandwidthMeter bandwidthMeter) {
-        // Normalize the results.
-        if (trackNames == null) {
-            trackNames = new String[RENDERER_COUNT][];
-        }
-        if (multiTrackSources == null) {
-            multiTrackSources = new MultiTrackChunkSource[RENDERER_COUNT];
-        }
-        for (int rendererIndex = 0; rendererIndex < RENDERER_COUNT; rendererIndex++) {
-            if (renderers[rendererIndex] == null) {
+    void invokeOnRenderersBuilt(TrackRenderer[] renderers, BandwidthMeter bandwidthMeter) {
+        for (int i = 0; i < RENDERER_COUNT; i++) {
+            if (renderers[i] == null) {
                 // Convert a null renderer to a dummy renderer.
-                renderers[rendererIndex] = new DummyTrackRenderer();
-            }
-            if (trackNames[rendererIndex] == null) {
-                // Convert a null trackNames to an array of suitable length.
-                int trackCount = multiTrackSources[rendererIndex] != null
-                        ? multiTrackSources[rendererIndex].getTrackCount() : 1;
-                trackNames[rendererIndex] = new String[trackCount];
+                renderers[i] = new DummyTrackRenderer();
             }
         }
         // Complete preparation.
-        this.trackNames = trackNames;
         this.videoRenderer = renderers[TYPE_VIDEO];
-        this.multiTrackSources = multiTrackSources;
         pushSurface(false);
-        pushTrackSelection(TYPE_VIDEO, true);
-        pushTrackSelection(TYPE_AUDIO, true);
-        pushTrackSelection(TYPE_TEXT, true);
         player.prepare(renderers);
         rendererBuildingState = RENDERER_BUILDING_STATE_BUILT;
     }
@@ -319,14 +284,15 @@ public class Player implements ExoPlayer.Listener {
         maybeReportPlayerState();
     }
 
-    void invokeOnVideoSizeChanged(int width, int height, float pixelWidthHeightRatio) {
+    void invokeOnVideoSizeChanged(int width, int height, int unappliedRotationDegrees,
+            float pixelWidthHeightRatio) {
         for (Listener listener : listeners) {
-            listener.onVideoSizeChanged(width, height, pixelWidthHeightRatio);
+            listener.onVideoSizeChanged(width, height,unappliedRotationDegrees, pixelWidthHeightRatio);
         }
     }
 
     boolean isDisabledTrack(int type) {
-        return selectedTracks[type] == DISABLED_TRACK;
+        return getSelectedTrack(TYPE_TEXT) != TRACK_DISABLED;
     }
 
     private void maybeReportPlayerState() {
@@ -352,27 +318,6 @@ public class Player implements ExoPlayer.Listener {
         } else {
             player.sendMessage(videoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE,
                     surface);
-        }
-    }
-
-    private void pushTrackSelection(int type, boolean allowRendererEnable) {
-        if (multiTrackSources == null) {
-            return;
-        }
-
-        int trackIndex = selectedTracks[type];
-        if (trackIndex == DISABLED_TRACK) {
-            player.setRendererEnabled(type, false);
-        } else if (multiTrackSources[type] == null) {
-            player.setRendererEnabled(type, allowRendererEnable);
-        } else {
-            boolean playWhenReady = player.getPlayWhenReady();
-            player.setPlayWhenReady(false);
-            player.setRendererEnabled(type, false);
-            player.sendMessage(multiTrackSources[type], MultiTrackChunkSource.MSG_SELECT_TRACK,
-                    trackIndex);
-            player.setRendererEnabled(type, allowRendererEnable);
-            player.setPlayWhenReady(playWhenReady);
         }
     }
 
