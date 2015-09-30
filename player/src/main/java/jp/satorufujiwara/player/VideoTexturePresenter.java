@@ -25,7 +25,6 @@ public class VideoTexturePresenter implements Player.Listener,
     public VideoTexturePresenter(final VideoTextureView view) {
         this.textureView = view;
         audioCapabilitiesReceiver = new AudioCapabilitiesReceiver(view.getContext(), this);
-        audioCapabilitiesReceiver.register();
         textureView.setSurfaceTextureListener(
                 new TextureView.SurfaceTextureListener() {
                     @Override
@@ -115,6 +114,14 @@ public class VideoTexturePresenter implements Player.Listener,
         playerNeedsPrepare = true;
     }
 
+    public void onCreate() {
+        audioCapabilitiesReceiver.register();
+    }
+
+    public void onDestroy() {
+        audioCapabilitiesReceiver.unregister();
+    }
+
     public void prepare() {
         if (player == null) {
             player = new Player();
@@ -131,7 +138,6 @@ public class VideoTexturePresenter implements Player.Listener,
         if (player == null) {
             return;
         }
-        audioCapabilitiesReceiver.unregister();
         playerPosition = player.getCurrentPosition();
         player.removeListener(this);
         player.release();
