@@ -40,17 +40,16 @@ import jp.satorufujiwara.player.RendererBuilderCallback;
  */
 public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
-    private static final int BUFFER_SEGMENT_SIZE = 256 * 1024;
-    private static final int BUFFER_SEGMENTS = 64;
+    private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
+    private static final int BUFFER_SEGMENTS = 256;
 
-    final AudioCapabilities audioCapabilities;
     long limitBitrate = Long.MAX_VALUE;
     LimitedBandwidthMeter bandwidthMeter;
     private AsyncRendererBuilder currentAsyncBuilder;
 
     private HlsRendererBuilder(Builder builder) {
-        super(builder.context, builder.eventHandler, builder.eventProxy, builder.userAgent, builder.url);
-        audioCapabilities = builder.audioCapabilities;
+        super(builder.context, builder.eventHandler, builder.eventProxy, builder.userAgent,
+                builder.url);
     }
 
     @Override
@@ -83,12 +82,14 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
         private boolean canceled;
 
-        public AsyncRendererBuilder(HlsRendererBuilder rendererBuilder, RendererBuilderCallback callback) {
+        public AsyncRendererBuilder(HlsRendererBuilder rendererBuilder,
+                RendererBuilderCallback callback) {
             this.rendererBuilder = rendererBuilder;
             this.callback = callback;
             HlsPlaylistParser parser = new HlsPlaylistParser();
             playlistFetcher = new ManifestFetcher<>(rendererBuilder.getUrl(),
-                    new DefaultUriDataSource(rendererBuilder.getContext(), rendererBuilder.getUserAgent()), parser);
+                    new DefaultUriDataSource(rendererBuilder.getContext(),
+                            rendererBuilder.getUserAgent()), parser);
         }
 
         public void init() {
@@ -115,7 +116,8 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             }
             final Context context = rendererBuilder.getContext();
             final Handler handler = rendererBuilder.getEventHandler();
-            final LoadControl loadControl = new DefaultLoadControl(new DefaultAllocator(BUFFER_SEGMENT_SIZE));
+            final LoadControl loadControl = new DefaultLoadControl(
+                    new DefaultAllocator(BUFFER_SEGMENT_SIZE));
 
             final LimitedBandwidthMeter bandwidthMeter = new LimitedBandwidthMeter();
             bandwidthMeter.setLimitBitrate(limitBitrate);
@@ -134,17 +136,22 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             }
 
             final HlsEventProxy eventProxy = rendererBuilder.getEventProxy();
-            final DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter, rendererBuilder.getUserAgent());
-            HlsChunkSource chunkSource = new HlsChunkSource(dataSource, rendererBuilder.getUrl(), manifest, bandwidthMeter,
-                    variantIndices, HlsChunkSource.ADAPTIVE_MODE_SPLICE, rendererBuilder.audioCapabilities);
+            final DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter,
+                    rendererBuilder.getUserAgent());
+            HlsChunkSource chunkSource = new HlsChunkSource(dataSource, rendererBuilder.getUrl(),
+                    manifest, bandwidthMeter,
+                    variantIndices, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
                     BUFFER_SEGMENTS * BUFFER_SEGMENT_SIZE, handler, eventProxy, Player.TYPE_VIDEO);
-            MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(sampleSource,
+            MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(
+                    sampleSource,
                     MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, handler, eventProxy, 50);
-            MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource);
+            MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
+                    null, true, handler, eventProxy, AudioCapabilities.getCapabilities(context));
             MetadataTrackRenderer<Map<String, Object>> id3Renderer = new MetadataTrackRenderer<>(
                     sampleSource, new Id3Parser(), eventProxy, handler.getLooper());
-            Eia608TrackRenderer closedCaptionRenderer = new Eia608TrackRenderer(sampleSource, eventProxy,
+            Eia608TrackRenderer closedCaptionRenderer = new Eia608TrackRenderer(sampleSource,
+                    eventProxy,
                     handler.getLooper());
 
             TrackRenderer[] renderers = new TrackRenderer[Player.RENDERER_COUNT];
@@ -152,7 +159,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             renderers[Player.TYPE_AUDIO] = audioRenderer;
             renderers[Player.TYPE_METADATA] = id3Renderer;
             renderers[Player.TYPE_TEXT] = closedCaptionRenderer;
-            callback.onRenderersBuilt(null, null, renderers, bandwidthMeter);
+            callback.onRenderers(renderers, bandwidthMeter);
         }
 
     }
@@ -160,15 +167,13 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
     public static class Builder {
 
         final Context context;
-        final AudioCapabilities audioCapabilities;
         String userAgent;
         String url;
         HlsEventProxy eventProxy;
         Handler eventHandler;
 
-        public Builder(Context context, AudioCapabilities audioCapabilities) {
+        public Builder(Context context) {
             this.context = context;
-            this.audioCapabilities = audioCapabilities;
         }
 
         public Builder userAgent(String userAgent) {

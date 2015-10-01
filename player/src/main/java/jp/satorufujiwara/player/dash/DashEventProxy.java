@@ -12,7 +12,7 @@ public class DashEventProxy extends EventProxy implements DashChunkSource.EventL
      */
     public interface InfoListener {
 
-        void onSeekRangeChanged(TimeRange seekRange);
+        void onAvailableRangeChanged(TimeRange seekRange);
     }
 
     private InfoListener infoListener;
@@ -23,9 +23,9 @@ public class DashEventProxy extends EventProxy implements DashChunkSource.EventL
 
     /** DashChunkSource.EventListener */
     @Override
-    public void onSeekRangeChanged(TimeRange timeRange) {
+    public void onAvailableRangeChanged(TimeRange timeRange) {
         if (infoListener != null) {
-            infoListener.onSeekRangeChanged(timeRange);
+            infoListener.onAvailableRangeChanged(timeRange);
         }
     }
 

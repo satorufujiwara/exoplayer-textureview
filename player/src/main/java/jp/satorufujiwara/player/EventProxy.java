@@ -7,7 +7,6 @@ import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioTrack;
 import com.google.android.exoplayer.chunk.Format;
-import com.google.android.exoplayer.chunk.MultiTrackChunkSource;
 import com.google.android.exoplayer.metadata.MetadataTrackRenderer;
 import com.google.android.exoplayer.text.Cue;
 import com.google.android.exoplayer.text.TextRenderer;
@@ -121,14 +120,14 @@ public class EventProxy implements
 
     /** RendererBuilderCallback */
     @Override
-    public void onRenderersBuilt(String[][] trackNames, MultiTrackChunkSource[] multiTrackSources, TrackRenderer[] renderers,
-            BandwidthMeter bandwidthMeter) {
-        player.invokeOnRenderersBuilt(trackNames, multiTrackSources, renderers, bandwidthMeter);
+    public void onRenderers(TrackRenderer[] renderers, BandwidthMeter bandwidthMeter) {
+        player.invokeOnRenderersBuilt(renderers, bandwidthMeter);
         this.bandwidthMeter = bandwidthMeter;
         this.codecCounters = renderers[Player.TYPE_VIDEO] instanceof MediaCodecTrackRenderer
                 ? ((MediaCodecTrackRenderer) renderers[Player.TYPE_VIDEO]).codecCounters
                 : renderers[Player.TYPE_AUDIO] instanceof MediaCodecTrackRenderer
-                        ? ((MediaCodecTrackRenderer) renderers[Player.TYPE_AUDIO]).codecCounters : null;
+                        ? ((MediaCodecTrackRenderer) renderers[Player.TYPE_AUDIO]).codecCounters
+                        : null;
     }
 
     /** RendererBuilderCallback */
@@ -174,8 +173,10 @@ public class EventProxy implements
 
     /** MediaCodecVideoTrackRenderer.EventListener */
     @Override
-    public void onVideoSizeChanged(int width, int height, float pixelWidthHeightRatio) {
-        player.invokeOnVideoSizeChanged(width, height, pixelWidthHeightRatio);
+    public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees,
+            float pixelWidthHeightRatio) {
+        player.invokeOnVideoSizeChanged(width, height, unappliedRotationDegrees,
+                pixelWidthHeightRatio);
     }
 
     /** MediaCodecVideoTrackRenderer.EventListener */
@@ -186,7 +187,8 @@ public class EventProxy implements
 
     /** MediaCodecVideoTrackRenderer.EventListener */
     @Override
-    public void onDecoderInitializationError(MediaCodecTrackRenderer.DecoderInitializationException e) {
+    public void onDecoderInitializationError(
+            MediaCodecTrackRenderer.DecoderInitializationException e) {
         if (internalErrorListener != null) {
             internalErrorListener.onDecoderInitializationError(e);
         }
@@ -205,7 +207,8 @@ public class EventProxy implements
     public void onDecoderInitialized(String decoderName, long elapsedRealtimeMs,
             long initializationDurationMs) {
         if (infoListener != null) {
-            infoListener.onDecoderInitialized(decoderName, elapsedRealtimeMs, initializationDurationMs);
+            infoListener.onDecoderInitialized(decoderName, elapsedRealtimeMs,
+                    initializationDurationMs);
         }
     }
 
