@@ -20,7 +20,6 @@ public class VideoTexturePresenter implements Player.Listener,
     private RendererBuilder rendererBuilder;
     private long limitBitrate = Long.MAX_VALUE;
     private boolean playerNeedsPrepare;
-    private long playerPosition;
 
     public VideoTexturePresenter(final VideoTextureView view) {
         this.textureView = view;
@@ -138,7 +137,6 @@ public class VideoTexturePresenter implements Player.Listener,
         if (player == null) {
             return;
         }
-        playerPosition = player.getCurrentPosition();
         player.removeListener(this);
         player.release();
         player = null;
