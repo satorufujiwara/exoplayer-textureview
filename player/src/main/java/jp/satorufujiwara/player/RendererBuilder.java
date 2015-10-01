@@ -24,7 +24,8 @@ public abstract class RendererBuilder<T extends EventProxy> {
     /**
      * Builds renderers for playback.
      *
-     * @param callback The player for which renderers are being built. {@link RendererBuilderCallback#onRenderersBuilt}
+     * @param callback The player for which renderers are being built.
+     *                 {@link RendererBuilderCallback#onRenderers}
      *                 should be invoked once the renderers have been built. If building fails,
      *                 {@link RendererBuilderCallback#onRenderersError} should be invoked.
      */
@@ -32,8 +33,9 @@ public abstract class RendererBuilder<T extends EventProxy> {
 
     /**
      * Cancels the current build operation, if there is one. Else does nothing.
-     * A canceled build operation must not invoke {@link RendererBuilderCallback#onRenderersBuilt} or
-     * {@link RendererBuilderCallback#onRenderersError} on the player, which may have been released.
+     * A canceled build operation must not invoke {@link RendererBuilderCallback#onRenderers} or
+     * {@link RendererBuilderCallback#onRenderersError} on the player, which may have been
+     * released.
      */
     protected abstract void cancel();
 
