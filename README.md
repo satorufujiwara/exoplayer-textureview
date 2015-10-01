@@ -8,6 +8,8 @@ exoplayer-textureview
 
 [ExoPlayer](https://github.com/google/ExoPlayer)'s wrapper for using with TextureView.
 
+ExoPlayer's version is [r1.5.0](https://github.com/google/ExoPlayer/blob/master/RELEASENOTES.md#r150)
+
 # Features
 * Play HLS playlist
 * Set bitrate limit
@@ -20,7 +22,7 @@ repositories {
     jcenter()
 }
 dependencies {
-    compile 'jp.satorufujiwara:exoplayer-textureview:0.1.3'
+    compile 'jp.satorufujiwara:exoplayer-textureview:0.2.0'
 }
 ```
 
@@ -33,26 +35,16 @@ Create `VideoTexturePresenter`'s instance and bind to `Fragment`'s or `Activity`
 public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
     videoTexturePresenter = new VideoTexturePresenter(videoTextureView);
+    videoTexturePresenter.onCreate();
     VideoSource source = new VideoSource(Uri.parse("hls playlist url."), VideoSource.Type.HLS);
     videoTexturePresenter.setSource(source, "UserAgent");
     videoTexturePresenter.prepare();
 }
 
 @Override
-public void onResume() {
-    super.onResume();
-    videoTexturePresenter.onResume();
-}
-
-@Override
-public void onPause() {
-    videoTexturePresenter.onPause();
-    super.onPause();
-}
-
-@Override
 public void onDestroyView() {
     videoTexturePresenter.release();
+    videoTexturePresenter.onDestory();
     super.onDestroyView();
 }
 ```

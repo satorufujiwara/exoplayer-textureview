@@ -17,11 +17,9 @@ public class VideoTexturePresenter implements Player.Listener,
 
     private Player player;
     private AudioCapabilitiesReceiver audioCapabilitiesReceiver;
-    private AudioCapabilities audioCapabilities;
     private RendererBuilder rendererBuilder;
     private long limitBitrate = Long.MAX_VALUE;
     private boolean playerNeedsPrepare;
-    private long playerPosition;
 
     public VideoTexturePresenter(final VideoTextureView view) {
         this.textureView = view;
@@ -47,6 +45,7 @@ public class VideoTexturePresenter implements Player.Listener,
                         if (player != null) {
                             player.blockingClearSurface();
                         }
+                        playerNeedsPrepare = true;
                         return true;
                     }
 
@@ -69,8 +68,10 @@ public class VideoTexturePresenter implements Player.Listener,
         callbacks.fireOnError(e);
     }
 
+
     @Override
-    public void onVideoSizeChanged(int width, int height, float pixelWidthHeightRatio) {
+    public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees,
+            float pixelWidthHeightRatio) {
         textureView.setVideoWidthHeightRatio(
                 height == 0 ? 1 : (width * pixelWidthHeightRatio) / height);
         callbacks.fireOnVideoSizeChanged(width, height, pixelWidthHeightRatio);
@@ -78,23 +79,17 @@ public class VideoTexturePresenter implements Player.Listener,
 
     @Override
     public void onAudioCapabilitiesChanged(AudioCapabilities audioCapabilities) {
-        boolean audioCapabilitiesChanged = !audioCapabilities.equals(this.audioCapabilities);
-        if (player == null || audioCapabilitiesChanged) {
-            this.audioCapabilities = audioCapabilities;
-            release();
-            prepare();
-        } else {
-            player.setBackgrounded(false);
+        if (player == null) {
+            return;
         }
-    }
-
-    public void onResume() {
-        audioCapabilitiesReceiver.register();
-    }
-
-    public void onPause() {
-        audioCapabilitiesReceiver.unregister();
-        playerNeedsPrepare = true;
+        boolean backgrounded = player.getBackgrounded();
+        boolean playWhenReady = player.getPlayWhenReady();
+        release();
+        prepare();
+        if (playWhenReady) {
+            play();
+        }
+        player.setBackgrounded(backgrounded);
     }
 
     public Callbacks callback() {
@@ -118,6 +113,14 @@ public class VideoTexturePresenter implements Player.Listener,
         playerNeedsPrepare = true;
     }
 
+    public void onCreate() {
+        audioCapabilitiesReceiver.register();
+    }
+
+    public void onDestroy() {
+        audioCapabilitiesReceiver.unregister();
+    }
+
     public void prepare() {
         if (player == null) {
             player = new Player();
@@ -134,7 +137,6 @@ public class VideoTexturePresenter implements Player.Listener,
         if (player == null) {
             return;
         }
-        playerPosition = player.getCurrentPosition();
         player.removeListener(this);
         player.release();
         player = null;
@@ -203,7 +205,7 @@ public class VideoTexturePresenter implements Player.Listener,
             final String userAgent) {
         switch (source.type) {
             case HLS:
-                return new HlsRendererBuilder.Builder(textureView.getContext(), audioCapabilities)
+                return new HlsRendererBuilder.Builder(textureView.getContext())
                         .userAgent(userAgent)
                         .url(source.uri.toString())
                         .build();

@@ -11,6 +11,8 @@ public class StreamingEventProxy extends EventProxy implements
     public interface InternalErrorListener {
 
         void onDrmSessionManagerError(Exception e);
+
+        void onDrmKeysLoaded();
     }
 
     private InternalErrorListener internalErrorListener;
@@ -27,4 +29,10 @@ public class StreamingEventProxy extends EventProxy implements
         }
     }
 
+    @Override
+    public void onDrmKeysLoaded() {
+        if (internalErrorListener != null) {
+            internalErrorListener.onDrmKeysLoaded();
+        }
+    }
 }
