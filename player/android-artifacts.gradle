@@ -2,7 +2,7 @@ task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
     classpath += files(ext.androidJar)
-    classpath += files("${projectDir.absolutePath}/build/intermediates/exploded-aar/com.google.android.exoplayer/exoplayer/r1.5.0/jars/classes.jar")
+    classpath += files("${projectDir.absolutePath}/build/intermediates/exploded-aar/com.google.android.exoplayer/exoplayer/r1.5.1/jars/classes.jar")
 }
 
 task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
