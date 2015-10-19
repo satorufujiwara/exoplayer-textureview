@@ -143,10 +143,11 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
                     variantIndices, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
                     BUFFER_SEGMENTS * BUFFER_SEGMENT_SIZE, handler, eventProxy, Player.TYPE_VIDEO);
-            MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(
+            MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
+                    sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, handler,
+                    eventProxy, 50);
+            MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(
                     sampleSource,
-                    MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, handler, eventProxy, 50);
-            MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
                     null, true, handler, eventProxy, AudioCapabilities.getCapabilities(context));
             MetadataTrackRenderer<Map<String, Object>> id3Renderer = new MetadataTrackRenderer<>(
                     sampleSource, new Id3Parser(), eventProxy, handler.getLooper());
