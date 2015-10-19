@@ -8,7 +8,7 @@ exoplayer-textureview
 
 [ExoPlayer](https://github.com/google/ExoPlayer)'s wrapper for using with TextureView.
 
-ExoPlayer's version is [r1.5.0](https://github.com/google/ExoPlayer/blob/master/RELEASENOTES.md#r150)
+ExoPlayer's version is [r1.5.1](https://github.com/google/ExoPlayer/blob/master/RELEASENOTES.md#current-dev-branch-from-r151)
 
 # Features
 * Play HLS playlist
@@ -22,7 +22,7 @@ repositories {
     jcenter()
 }
 dependencies {
-    compile 'jp.satorufujiwara:exoplayer-textureview:0.2.0'
+    compile 'jp.satorufujiwara:exoplayer-textureview:0.2.1'
 }
 ```
 
