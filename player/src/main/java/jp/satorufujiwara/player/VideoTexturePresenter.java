@@ -7,13 +7,18 @@ import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.TextureView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jp.satorufujiwara.player.hls.HlsRendererBuilder;
 
 public class VideoTexturePresenter implements Player.Listener,
         AudioCapabilitiesReceiver.Listener {
 
     private final VideoTextureView textureView;
-    private final Callbacks callbacks = new Callbacks();
+    private final List<OnStateChangedListener> onStateChangedListeners = new ArrayList<>();
+    private final List<OnErrorListener> onErrorListeners = new ArrayList<>();
+    private final List<OnVideoSizeChangedListener> onVideoSizeChangedListeners = new ArrayList<>();
 
     private Player player;
     private AudioCapabilitiesReceiver audioCapabilitiesReceiver;
@@ -60,12 +65,12 @@ public class VideoTexturePresenter implements Player.Listener,
 
     @Override
     public void onStateChanged(boolean playWhenReady, int playbackState) {
-        callbacks.fireOnStateChanged(playWhenReady, playbackState);
+        fireOnStateChanged(playWhenReady, playbackState);
     }
 
     @Override
     public void onError(Exception e) {
-        callbacks.fireOnError(e);
+        fireOnError(e);
     }
 
 
@@ -74,7 +79,7 @@ public class VideoTexturePresenter implements Player.Listener,
             float pixelWidthHeightRatio) {
         textureView.setVideoWidthHeightRatio(
                 height == 0 ? 1 : (width * pixelWidthHeightRatio) / height);
-        callbacks.fireOnVideoSizeChanged(width, height, pixelWidthHeightRatio);
+        fireOnVideoSizeChanged(width, height, pixelWidthHeightRatio);
     }
 
     @Override
@@ -90,10 +95,6 @@ public class VideoTexturePresenter implements Player.Listener,
             play();
         }
         player.setBackgrounded(backgrounded);
-    }
-
-    public Callbacks callback() {
-        return callbacks;
     }
 
     public EventProxy eventListeners() {
@@ -221,46 +222,40 @@ public class VideoTexturePresenter implements Player.Listener,
         return player == null ? -1 : player.getPlaybackState();
     }
 
-    public static class Callbacks {
-
-        private OnStateChangedListener onStateChangedListener;
-
-        private OnErrorListener onErrorListener;
-
-        private OnVideoSizeChangedListener onVideoSizeChangedListener;
-
-        public Callbacks onStateChanged(final OnStateChangedListener l) {
-            onStateChangedListener = l;
-            return this;
+    public void addOnStateChangedListener(OnStateChangedListener l) {
+        if (l != null) {
+            onStateChangedListeners.add(l);
         }
+    }
 
-        void fireOnStateChanged(boolean playWhenReady, int playbackState) {
-            if (onStateChangedListener != null) {
-                onStateChangedListener.onStateChanged(playWhenReady, playbackState);
-            }
+    public void addOnErrorListener(OnErrorListener l) {
+        if (l != null) {
+            onErrorListeners.add(l);
         }
+    }
 
-        public Callbacks onError(final OnErrorListener l) {
-            onErrorListener = l;
-            return this;
+    public void addOnVideoSizeChangedListener(OnVideoSizeChangedListener l) {
+        if (l != null) {
+            onVideoSizeChangedListeners.add(l);
         }
+    }
 
-        void fireOnError(final Exception e) {
-            if (onErrorListener != null) {
-                onErrorListener.onError(e);
-            }
+    private void fireOnStateChanged(final boolean playWhenReady, final int playbackState) {
+        for (OnStateChangedListener l : onStateChangedListeners) {
+            l.onStateChanged(playWhenReady, playbackState);
         }
+    }
 
-        public Callbacks onVideoSizeChanged(final OnVideoSizeChangedListener l) {
-            onVideoSizeChangedListener = l;
-            return this;
+    private void fireOnError(final Exception e) {
+        for (OnErrorListener l : onErrorListeners) {
+            l.onError(e);
         }
+    }
 
-        void fireOnVideoSizeChanged(final int width, final int height,
-                final float pixelWidthHeightRatio) {
-            if (onVideoSizeChangedListener != null) {
-                onVideoSizeChangedListener.onVideoSizeChanged(width, height, pixelWidthHeightRatio);
-            }
+    private void fireOnVideoSizeChanged(final int width, final int height,
+            final float pixelWidthHeightRatio) {
+        for (OnVideoSizeChangedListener l : onVideoSizeChangedListeners) {
+            l.onVideoSizeChanged(width, height, pixelWidthHeightRatio);
         }
     }
 
