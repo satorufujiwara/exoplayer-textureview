@@ -23,6 +23,7 @@ repositories {
 }
 dependencies {
     compile 'jp.satorufujiwara:exoplayer-textureview:0.3.0'
+    compile 'com.google.android.exoplayer:exoplayer:rX.X.X'
 }
 ```
 
