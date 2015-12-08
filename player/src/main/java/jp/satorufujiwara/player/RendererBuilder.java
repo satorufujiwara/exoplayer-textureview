@@ -2,6 +2,7 @@ package jp.satorufujiwara.player;
 
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Handler;
 
 public abstract class RendererBuilder<T extends EventProxy> {
@@ -9,16 +10,16 @@ public abstract class RendererBuilder<T extends EventProxy> {
     private final Context context;
     private final Handler eventHandler;
     private final String userAgent;
-    private final String url;
+    private final Uri uri;
     private final T eventProxy;
 
     protected RendererBuilder(Context context, Handler eventHandler, T eventProxy,
-            String userAgent, String url) {
+            String userAgent, Uri uri) {
         this.context = context;
         this.eventHandler = eventHandler;
         this.eventProxy = eventProxy;
         this.userAgent = userAgent;
-        this.url = url;
+        this.uri = uri;
     }
 
     /**
@@ -53,8 +54,8 @@ public abstract class RendererBuilder<T extends EventProxy> {
         return userAgent;
     }
 
-    public String getUrl() {
-        return url;
+    public Uri getUri() {
+        return uri;
     }
 
     public Handler getEventHandler() {
