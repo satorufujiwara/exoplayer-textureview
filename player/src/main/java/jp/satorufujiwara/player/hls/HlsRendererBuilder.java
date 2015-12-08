@@ -42,16 +42,13 @@ import jp.satorufujiwara.player.RendererBuilderCallback;
  */
 public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
-    private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
-    private static final int BUFFER_SEGMENTS = 256;
-
     long limitBitrate = Long.MAX_VALUE;
     LimitedBandwidthMeter bandwidthMeter;
     private AsyncRendererBuilder currentAsyncBuilder;
 
     private HlsRendererBuilder(Builder builder) {
         super(builder.context, builder.eventHandler, builder.eventProxy, builder.userAgent,
-                builder.uri);
+                builder.uri, builder.bufferSegmentSize, builder.bufferSegmentCount);
     }
 
     @Override
@@ -119,7 +116,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             final Context context = rendererBuilder.getContext();
             final Handler handler = rendererBuilder.getEventHandler();
             final LoadControl loadControl = new DefaultLoadControl(
-                    new DefaultAllocator(BUFFER_SEGMENT_SIZE));
+                    new DefaultAllocator(rendererBuilder.getBufferSegmentSize()));
 
             final LimitedBandwidthMeter bandwidthMeter = new LimitedBandwidthMeter();
             bandwidthMeter.setLimitBitrate(limitBitrate);
@@ -144,7 +141,8 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
                     rendererBuilder.getUri().toString(), manifest, bandwidthMeter,
                     variantIndices, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
-                    BUFFER_SEGMENTS * BUFFER_SEGMENT_SIZE, handler, eventProxy, Player.TYPE_VIDEO);
+                    rendererBuilder.getBufferSegmentSize() * rendererBuilder
+                            .getBufferSegmentCount(), handler, eventProxy, Player.TYPE_VIDEO);
             MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
                     sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, handler,
                     eventProxy, 50);
@@ -174,6 +172,8 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
         Uri uri;
         HlsEventProxy eventProxy;
         Handler eventHandler;
+        int bufferSegmentSize;
+        int bufferSegmentCount;
 
         public Builder(Context context) {
             this.context = context;
@@ -196,6 +196,16 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
         public Builder eventHandler(Handler eventHandler) {
             this.eventHandler = eventHandler;
+            return this;
+        }
+
+        public Builder bufferSegmentSize(int size) {
+            bufferSegmentSize = size;
+            return this;
+        }
+
+        public Builder bufferSegmentCount(int count) {
+            bufferSegmentCount = count;
             return this;
         }
 

@@ -28,25 +28,22 @@ import jp.satorufujiwara.player.RendererBuilderCallback;
  */
 public class AssetsRendererBuilder extends RendererBuilder<AssetsEventProxy> {
 
-    private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
-    private static final int BUFFER_SEGMENT_COUNT = 256;
-
     long limitBitrate = Long.MAX_VALUE;
     LimitedBandwidthMeter bandwidthMeter;
 
     private AssetsRendererBuilder(Builder builder) {
         super(builder.context, builder.eventHandler, builder.eventProxy, builder.userAgent,
-                builder.uri);
+                builder.uri, builder.bufferSegmentSize, builder.bufferSegmentCount);
     }
 
     @Override
     protected void buildRenderers(RendererBuilderCallback callback) {
         final Context context = getContext();
-        Allocator allocator = new DefaultAllocator(BUFFER_SEGMENT_SIZE);
+        Allocator allocator = new DefaultAllocator(getBufferSegmentSize());
         DataSource dataSource = new DefaultUriDataSource(getContext(), bandwidthMeter,
                 getUserAgent());
         ExtractorSampleSource sampleSource = new ExtractorSampleSource(getUri(), dataSource,
-                allocator, BUFFER_SEGMENT_COUNT * BUFFER_SEGMENT_SIZE);
+                allocator, getBufferSegmentSize() * getBufferSegmentCount());
         MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
                 sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000,
                 getEventHandler(), getEventProxy(), 50);
@@ -84,6 +81,8 @@ public class AssetsRendererBuilder extends RendererBuilder<AssetsEventProxy> {
         Uri uri;
         AssetsEventProxy eventProxy;
         Handler eventHandler;
+        int bufferSegmentSize;
+        int bufferSegmentCount;
 
         public Builder(Context context) {
             this.context = context;
@@ -106,6 +105,16 @@ public class AssetsRendererBuilder extends RendererBuilder<AssetsEventProxy> {
 
         public Builder eventHandler(Handler eventHandler) {
             this.eventHandler = eventHandler;
+            return this;
+        }
+
+        public Builder bufferSegmentSize(int size) {
+            bufferSegmentSize = size;
+            return this;
+        }
+
+        public Builder bufferSegmentCount(int count) {
+            bufferSegmentCount = count;
             return this;
         }
 

@@ -7,19 +7,26 @@ import android.os.Handler;
 
 public abstract class RendererBuilder<T extends EventProxy> {
 
+    static final int DEFAULT_BUFFER_SEGMENT_SIZE = 64 * 1024;
+    static final int DEFAULT_BUFFER_SEGMENT_COUNT = 256;
+
     private final Context context;
     private final Handler eventHandler;
     private final String userAgent;
     private final Uri uri;
     private final T eventProxy;
+    private final int bufferSegmentSize;
+    private final int bufferSegmentCount;
 
     protected RendererBuilder(Context context, Handler eventHandler, T eventProxy,
-            String userAgent, Uri uri) {
+            String userAgent, Uri uri, int bufferSegmentSize, int bufferSegmentCount) {
         this.context = context;
         this.eventHandler = eventHandler;
         this.eventProxy = eventProxy;
         this.userAgent = userAgent;
         this.uri = uri;
+        this.bufferSegmentSize = bufferSegmentSize;
+        this.bufferSegmentCount = bufferSegmentCount;
     }
 
     /**
@@ -60,6 +67,14 @@ public abstract class RendererBuilder<T extends EventProxy> {
 
     public Handler getEventHandler() {
         return eventHandler;
+    }
+
+    public int getBufferSegmentSize() {
+        return bufferSegmentSize;
+    }
+
+    public int getBufferSegmentCount() {
+        return bufferSegmentCount;
     }
 
 }
