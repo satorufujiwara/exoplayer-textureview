@@ -20,7 +20,8 @@ public class VideoSource {
     }
 
     public enum Type {
-        HLS
+        HLS,
+        ASSETS
     }
 
 }

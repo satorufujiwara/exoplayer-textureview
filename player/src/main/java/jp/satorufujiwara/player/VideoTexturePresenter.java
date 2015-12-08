@@ -10,6 +10,7 @@ import android.view.TextureView;
 import java.util.ArrayList;
 import java.util.List;
 
+import jp.satorufujiwara.player.assets.AssetsRendererBuilder;
 import jp.satorufujiwara.player.hls.HlsRendererBuilder;
 
 public class VideoTexturePresenter implements Player.Listener,
@@ -208,7 +209,12 @@ public class VideoTexturePresenter implements Player.Listener,
             case HLS:
                 return new HlsRendererBuilder.Builder(textureView.getContext())
                         .userAgent(userAgent)
-                        .url(source.uri.toString())
+                        .uri(source.uri)
+                        .build();
+            case ASSETS:
+                return new AssetsRendererBuilder.Builder(textureView.getContext())
+                        .userAgent(userAgent)
+                        .uri(source.uri)
                         .build();
         }
         throw new IllegalArgumentException("Current source.type is not supported.");
