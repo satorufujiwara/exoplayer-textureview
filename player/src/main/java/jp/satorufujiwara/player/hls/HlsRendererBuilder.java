@@ -24,8 +24,10 @@ import com.google.android.exoplayer.util.ManifestFetcher.ManifestCallback;
 
 import android.content.Context;
 import android.media.MediaCodec;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -49,7 +51,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
     private HlsRendererBuilder(Builder builder) {
         super(builder.context, builder.eventHandler, builder.eventProxy, builder.userAgent,
-                builder.url);
+                builder.uri);
     }
 
     @Override
@@ -87,7 +89,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             this.rendererBuilder = rendererBuilder;
             this.callback = callback;
             HlsPlaylistParser parser = new HlsPlaylistParser();
-            playlistFetcher = new ManifestFetcher<>(rendererBuilder.getUrl(),
+            playlistFetcher = new ManifestFetcher<>(rendererBuilder.getUri().toString(),
                     new DefaultUriDataSource(rendererBuilder.getContext(),
                             rendererBuilder.getUserAgent()), parser);
         }
@@ -138,8 +140,8 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             final HlsEventProxy eventProxy = rendererBuilder.getEventProxy();
             final DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter,
                     rendererBuilder.getUserAgent());
-            HlsChunkSource chunkSource = new HlsChunkSource(dataSource, rendererBuilder.getUrl(),
-                    manifest, bandwidthMeter,
+            HlsChunkSource chunkSource = new HlsChunkSource(dataSource,
+                    rendererBuilder.getUri().toString(), manifest, bandwidthMeter,
                     variantIndices, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
                     BUFFER_SEGMENTS * BUFFER_SEGMENT_SIZE, handler, eventProxy, Player.TYPE_VIDEO);
@@ -169,7 +171,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
         final Context context;
         String userAgent;
-        String url;
+        Uri uri;
         HlsEventProxy eventProxy;
         Handler eventHandler;
 
@@ -182,8 +184,8 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             return this;
         }
 
-        public Builder url(String url) {
-            this.url = url;
+        public Builder uri(Uri uri) {
+            this.uri = uri;
             return this;
         }
 
@@ -198,10 +200,10 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
         }
 
         public HlsRendererBuilder build() {
-            if (userAgent == null) {
+            if (TextUtils.isEmpty(userAgent)) {
                 throw new IllegalArgumentException("UserAgent must not be null.");
             }
-            if (url == null) {
+            if (uri == null) {
                 throw new IllegalArgumentException("Url must not be null.");
             }
             if (eventHandler == null) {
