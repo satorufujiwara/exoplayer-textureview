@@ -12,6 +12,7 @@ ExoPlayer's version is [r1.5.2](https://github.com/google/ExoPlayer/blob/master/
 
 # Features
 * Play HLS playlist
+* Play local videos in assets folder.
 * Set bitrate limit
 * Mute / unmute
 
@@ -22,7 +23,7 @@ repositories {
     jcenter()
 }
 dependencies {
-    compile 'jp.satorufujiwara:exoplayer-textureview:0.3.0'
+    compile 'jp.satorufujiwara:exoplayer-textureview:0.3.1'
     compile 'com.google.android.exoplayer:exoplayer:rX.X.X'
 }
 ```
