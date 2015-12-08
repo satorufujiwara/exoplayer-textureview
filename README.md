@@ -12,6 +12,7 @@ ExoPlayer's version is [r1.5.2](https://github.com/google/ExoPlayer/blob/master/
 
 # Features
 * Play HLS playlist
+* Play local videos in assets folder.
 * Set bitrate limit
 * Mute / unmute
 
