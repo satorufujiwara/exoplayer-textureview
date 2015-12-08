@@ -109,10 +109,17 @@ public class VideoTexturePresenter implements Player.Listener,
         }
     }
 
-    public void setSource(final VideoSource source, final String userAgent) {
-        rendererBuilder = createRendererBuilder(source, userAgent);
+    public void setSource(final VideoSource source, final String userAgent,
+            final int bufferSegmentSize, int bufferSegmentCount) {
+        rendererBuilder = createRendererBuilder(source, userAgent, bufferSegmentSize,
+                bufferSegmentCount);
         rendererBuilder.setLimitBitrate(limitBitrate);
         playerNeedsPrepare = true;
+    }
+
+    public void setSource(final VideoSource source, final String userAgent) {
+        setSource(source, userAgent, RendererBuilder.DEFAULT_BUFFER_SEGMENT_SIZE,
+                RendererBuilder.DEFAULT_BUFFER_SEGMENT_COUNT);
     }
 
     public void onCreate() {
@@ -204,17 +211,21 @@ public class VideoTexturePresenter implements Player.Listener,
     }
 
     private RendererBuilder createRendererBuilder(final VideoSource source,
-            final String userAgent) {
+            final String userAgent, final int bufferSegmentSize, int bufferSegmentCount) {
         switch (source.type) {
             case HLS:
                 return new HlsRendererBuilder.Builder(textureView.getContext())
                         .userAgent(userAgent)
                         .uri(source.uri)
+                        .bufferSegmentSize(bufferSegmentSize)
+                        .bufferSegmentCount(bufferSegmentCount)
                         .build();
             case ASSETS:
                 return new AssetsRendererBuilder.Builder(textureView.getContext())
                         .userAgent(userAgent)
                         .uri(source.uri)
+                        .bufferSegmentSize(bufferSegmentSize)
+                        .bufferSegmentCount(bufferSegmentCount)
                         .build();
         }
         throw new IllegalArgumentException("Current source.type is not supported.");
