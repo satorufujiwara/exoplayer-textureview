@@ -10,9 +10,6 @@ import android.view.TextureView;
 import java.util.ArrayList;
 import java.util.List;
 
-import jp.satorufujiwara.player.assets.AssetsRendererBuilder;
-import jp.satorufujiwara.player.hls.HlsRendererBuilder;
-
 public class VideoTexturePresenter implements Player.Listener,
         AudioCapabilitiesReceiver.Listener {
 
@@ -99,7 +96,7 @@ public class VideoTexturePresenter implements Player.Listener,
     }
 
     public EventProxy eventListeners() {
-        return rendererBuilder != null ? rendererBuilder.getEventProxy() : null;
+        return rendererBuilder != null ? rendererBuilder.eventProxy : null;
     }
 
     public void setLimitBitrate(final long limitBitrate) {
@@ -109,17 +106,10 @@ public class VideoTexturePresenter implements Player.Listener,
         }
     }
 
-    public void setSource(final VideoSource source, final String userAgent,
-            final int bufferSegmentSize, int bufferSegmentCount) {
-        rendererBuilder = createRendererBuilder(source, userAgent, bufferSegmentSize,
-                bufferSegmentCount);
+    public void setSource(final VideoSource source) {
+        rendererBuilder = source.createRendererBuilder(textureView.getContext());
         rendererBuilder.setLimitBitrate(limitBitrate);
         playerNeedsPrepare = true;
-    }
-
-    public void setSource(final VideoSource source, final String userAgent) {
-        setSource(source, userAgent, RendererBuilder.DEFAULT_BUFFER_SEGMENT_SIZE,
-                RendererBuilder.DEFAULT_BUFFER_SEGMENT_COUNT);
     }
 
     public void onCreate() {
@@ -208,27 +198,6 @@ public class VideoTexturePresenter implements Player.Listener,
 
     public long getBufferedPosition() {
         return player == null ? 0 : player.getBufferedPosition();
-    }
-
-    private RendererBuilder createRendererBuilder(final VideoSource source,
-            final String userAgent, final int bufferSegmentSize, int bufferSegmentCount) {
-        switch (source.type) {
-            case HLS:
-                return new HlsRendererBuilder.Builder(textureView.getContext())
-                        .userAgent(userAgent)
-                        .uri(source.uri)
-                        .bufferSegmentSize(bufferSegmentSize)
-                        .bufferSegmentCount(bufferSegmentCount)
-                        .build();
-            case ASSETS:
-                return new AssetsRendererBuilder.Builder(textureView.getContext())
-                        .userAgent(userAgent)
-                        .uri(source.uri)
-                        .bufferSegmentSize(bufferSegmentSize)
-                        .bufferSegmentCount(bufferSegmentCount)
-                        .build();
-        }
-        throw new IllegalArgumentException("Current source.type is not supported.");
     }
 
     public boolean isPlaying() {

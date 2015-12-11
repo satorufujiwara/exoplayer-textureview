@@ -15,8 +15,6 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Looper;
-import android.text.TextUtils;
 
 import jp.satorufujiwara.player.LimitedBandwidthMeter;
 import jp.satorufujiwara.player.Player;
@@ -31,27 +29,26 @@ public class AssetsRendererBuilder extends RendererBuilder<AssetsEventProxy> {
     long limitBitrate = Long.MAX_VALUE;
     LimitedBandwidthMeter bandwidthMeter;
 
-    private AssetsRendererBuilder(Builder builder) {
-        super(builder.context, builder.eventHandler, builder.eventProxy, builder.userAgent,
-                builder.uri, builder.bufferSegmentSize, builder.bufferSegmentCount);
+    AssetsRendererBuilder(Context context, Handler eventHandler, AssetsEventProxy eventProxy,
+            String userAgent, Uri uri, int bufferSegmentSize, int bufferSegmentCount) {
+        super(context, eventHandler, eventProxy, userAgent, uri, bufferSegmentSize,
+                bufferSegmentCount);
     }
 
     @Override
     protected void buildRenderers(RendererBuilderCallback callback) {
-        final Context context = getContext();
-        Allocator allocator = new DefaultAllocator(getBufferSegmentSize());
-        DataSource dataSource = new DefaultUriDataSource(getContext(), bandwidthMeter,
-                getUserAgent());
-        ExtractorSampleSource sampleSource = new ExtractorSampleSource(getUri(), dataSource,
-                allocator, getBufferSegmentSize() * getBufferSegmentCount());
+        Allocator allocator = new DefaultAllocator(bufferSegmentSize);
+        DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
+        ExtractorSampleSource sampleSource = new ExtractorSampleSource(uri, dataSource,
+                allocator, bufferSegmentSize * bufferSegmentCount);
         MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
                 sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000,
-                getEventHandler(), getEventProxy(), 50);
+                eventHandler, eventProxy, 50);
         MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
-                null, true, getEventHandler(), getEventProxy(),
+                null, true, eventHandler, eventProxy,
                 AudioCapabilities.getCapabilities(context));
-        TrackRenderer textRenderer = new TextTrackRenderer(sampleSource, getEventProxy(),
-                getEventHandler().getLooper());
+        TrackRenderer textRenderer = new TextTrackRenderer(sampleSource, eventProxy,
+                eventHandler.getLooper());
 
         // Invoke the callback.
         TrackRenderer[] renderers = new TrackRenderer[Player.RENDERER_COUNT];
@@ -71,67 +68,6 @@ public class AssetsRendererBuilder extends RendererBuilder<AssetsEventProxy> {
         limitBitrate = bitrate;
         if (bandwidthMeter != null) {
             bandwidthMeter.setLimitBitrate(bitrate);
-        }
-    }
-
-    public static class Builder {
-
-        final Context context;
-        String userAgent;
-        Uri uri;
-        AssetsEventProxy eventProxy;
-        Handler eventHandler;
-        int bufferSegmentSize;
-        int bufferSegmentCount;
-
-        public Builder(Context context) {
-            this.context = context;
-        }
-
-        public Builder uri(Uri uri) {
-            this.uri = uri;
-            return this;
-        }
-
-        public Builder userAgent(String userAgent) {
-            this.userAgent = userAgent;
-            return this;
-        }
-
-        public Builder eventProxy(AssetsEventProxy eventProxy) {
-            this.eventProxy = eventProxy;
-            return this;
-        }
-
-        public Builder eventHandler(Handler eventHandler) {
-            this.eventHandler = eventHandler;
-            return this;
-        }
-
-        public Builder bufferSegmentSize(int size) {
-            bufferSegmentSize = size;
-            return this;
-        }
-
-        public Builder bufferSegmentCount(int count) {
-            bufferSegmentCount = count;
-            return this;
-        }
-
-        public AssetsRendererBuilder build() {
-            if (TextUtils.isEmpty(userAgent)) {
-                throw new IllegalArgumentException("UserAgent must not be null.");
-            }
-            if (uri == null) {
-                throw new IllegalArgumentException("Uri must not be null.");
-            }
-            if (eventHandler == null) {
-                eventHandler = new Handler(Looper.getMainLooper());
-            }
-            if (eventProxy == null) {
-                eventProxy = new AssetsEventProxy();
-            }
-            return new AssetsRendererBuilder(this);
         }
     }
 
