@@ -56,6 +56,8 @@ public class EventProxy implements
 
         void onAudioTrackWriteError(AudioTrack.WriteException e);
 
+        void onAudioTrackUnderrun(int bufferSize, long bufferSizeMs, long elapsedSinceLastFeedMs);
+
         void onDecoderInitializationError(MediaCodecTrackRenderer.DecoderInitializationException e);
 
         void onCryptoError(MediaCodec.CryptoException e);
@@ -225,6 +227,16 @@ public class EventProxy implements
     public void onAudioTrackWriteError(AudioTrack.WriteException e) {
         if (internalErrorListener != null) {
             internalErrorListener.onAudioTrackWriteError(e);
+        }
+    }
+
+    /** MediaCodecAudioTrackRenderer.EventListener */
+    @Override
+    public void onAudioTrackUnderrun(int bufferSize, long bufferSizeMs,
+            long elapsedSinceLastFeedMs) {
+        if (internalErrorListener != null) {
+            internalErrorListener.onAudioTrackUnderrun(bufferSize, bufferSizeMs,
+                    elapsedSinceLastFeedMs);
         }
     }
 
