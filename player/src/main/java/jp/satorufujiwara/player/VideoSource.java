@@ -1,27 +1,34 @@
 package jp.satorufujiwara.player;
 
 
+import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
 
-public class VideoSource {
+public abstract class VideoSource {
 
-    public Type type = Type.HLS;
-    public Uri uri;
-    public String contentId;
+    public final Uri uri;
+    public final String contentId;
+    public final String userAgent;
+    public final Handler eventHandler;
+    public final int bufferSegmentSize;
+    public final int bufferSegmentCount;
 
-    public VideoSource(final Uri uri, final Type type) {
-        this(uri, type, uri.toString());
+    protected VideoSource(final Uri uri, final String userAgent, final Handler eventHandler,
+            final int bufferSegmentSize, int bufferSegmentCount) {
+        this(uri, uri.toString(), userAgent, eventHandler, bufferSegmentSize, bufferSegmentCount);
     }
 
-    public VideoSource(final Uri uri, final Type type, final String contentId) {
+    protected VideoSource(final Uri uri, final String contentId, final String userAgent,
+            final Handler eventHandler, final int bufferSegmentSize, int bufferSegmentCount) {
         this.uri = uri;
-        this.type = type;
         this.contentId = contentId;
+        this.userAgent = userAgent;
+        this.eventHandler = eventHandler;
+        this.bufferSegmentSize = bufferSegmentSize;
+        this.bufferSegmentCount = bufferSegmentCount;
     }
 
-    public enum Type {
-        HLS,
-        ASSETS
-    }
+    public abstract RendererBuilder createRendererBuilder(final Context context);
 
 }

@@ -118,7 +118,7 @@ public class Player implements ExoPlayer.Listener {
 
     public void setRendererBuilder(RendererBuilder rendererBuilder) {
         this.rendererBuilder = rendererBuilder;
-        eventProxy = rendererBuilder.getEventProxy();
+        eventProxy = rendererBuilder.eventProxy;
         eventProxy.setPlayer(this);
         pushSurface(false);
     }
@@ -287,7 +287,8 @@ public class Player implements ExoPlayer.Listener {
     void invokeOnVideoSizeChanged(int width, int height, int unappliedRotationDegrees,
             float pixelWidthHeightRatio) {
         for (Listener listener : listeners) {
-            listener.onVideoSizeChanged(width, height,unappliedRotationDegrees, pixelWidthHeightRatio);
+            listener.onVideoSizeChanged(width, height, unappliedRotationDegrees,
+                    pixelWidthHeightRatio);
         }
     }
 

@@ -26,8 +26,6 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Looper;
-import android.text.TextUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -44,11 +42,15 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
     long limitBitrate = Long.MAX_VALUE;
     LimitedBandwidthMeter bandwidthMeter;
+    final HlsChunkSourceCreator hlsChunkSourceCreator;
     private AsyncRendererBuilder currentAsyncBuilder;
 
-    private HlsRendererBuilder(Builder builder) {
-        super(builder.context, builder.eventHandler, builder.eventProxy, builder.userAgent,
-                builder.uri, builder.bufferSegmentSize, builder.bufferSegmentCount);
+    HlsRendererBuilder(Context context, Handler eventHandler, HlsEventProxy eventProxy,
+            String userAgent, Uri uri, int bufferSegmentSize, int bufferSegmentCount,
+            HlsChunkSourceCreator hlsChunkSourceCreator) {
+        super(context, eventHandler, eventProxy, userAgent, uri, bufferSegmentSize,
+                bufferSegmentCount);
+        this.hlsChunkSourceCreator = hlsChunkSourceCreator;
     }
 
     @Override
@@ -86,13 +88,13 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             this.rendererBuilder = rendererBuilder;
             this.callback = callback;
             HlsPlaylistParser parser = new HlsPlaylistParser();
-            playlistFetcher = new ManifestFetcher<>(rendererBuilder.getUri().toString(),
-                    new DefaultUriDataSource(rendererBuilder.getContext(),
-                            rendererBuilder.getUserAgent()), parser);
+            playlistFetcher = new ManifestFetcher<>(rendererBuilder.uri.toString(),
+                    new DefaultUriDataSource(rendererBuilder.context,
+                            rendererBuilder.userAgent), parser);
         }
 
         public void init() {
-            playlistFetcher.singleLoad(rendererBuilder.getEventHandler().getLooper(), this);
+            playlistFetcher.singleLoad(rendererBuilder.eventHandler.getLooper(), this);
         }
 
         public void cancel() {
@@ -113,10 +115,10 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             if (canceled) {
                 return;
             }
-            final Context context = rendererBuilder.getContext();
-            final Handler handler = rendererBuilder.getEventHandler();
+            final Context context = rendererBuilder.context;
+            final Handler handler = rendererBuilder.eventHandler;
             final LoadControl loadControl = new DefaultLoadControl(
-                    new DefaultAllocator(rendererBuilder.getBufferSegmentSize()));
+                    new DefaultAllocator(rendererBuilder.bufferSegmentSize));
 
             final LimitedBandwidthMeter bandwidthMeter = new LimitedBandwidthMeter();
             bandwidthMeter.setLimitBitrate(limitBitrate);
@@ -134,15 +136,21 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
                 }
             }
 
-            final HlsEventProxy eventProxy = rendererBuilder.getEventProxy();
+            final HlsEventProxy eventProxy = rendererBuilder.eventProxy;
             final DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter,
-                    rendererBuilder.getUserAgent());
-            HlsChunkSource chunkSource = new HlsChunkSource(dataSource,
-                    rendererBuilder.getUri().toString(), manifest, bandwidthMeter,
-                    variantIndices, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+                    rendererBuilder.userAgent);
+            final HlsChunkSource chunkSource;
+            if (rendererBuilder.hlsChunkSourceCreator != null) {
+                chunkSource = rendererBuilder.hlsChunkSourceCreator.create(dataSource,
+                        rendererBuilder.uri.toString(), manifest, bandwidthMeter, variantIndices);
+            } else {
+                chunkSource = new HlsChunkSource(dataSource,
+                        rendererBuilder.uri.toString(), manifest, bandwidthMeter,
+                        variantIndices, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+            }
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
-                    rendererBuilder.getBufferSegmentSize() * rendererBuilder
-                            .getBufferSegmentCount(), handler, eventProxy, Player.TYPE_VIDEO);
+                    rendererBuilder.bufferSegmentSize * rendererBuilder
+                            .bufferSegmentCount, handler, eventProxy, Player.TYPE_VIDEO);
             MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
                     sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, handler,
                     eventProxy, 50);
@@ -163,67 +171,6 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             callback.onRenderers(renderers, bandwidthMeter);
         }
 
-    }
-
-    public static class Builder {
-
-        final Context context;
-        String userAgent;
-        Uri uri;
-        HlsEventProxy eventProxy;
-        Handler eventHandler;
-        int bufferSegmentSize;
-        int bufferSegmentCount;
-
-        public Builder(Context context) {
-            this.context = context;
-        }
-
-        public Builder userAgent(String userAgent) {
-            this.userAgent = userAgent;
-            return this;
-        }
-
-        public Builder uri(Uri uri) {
-            this.uri = uri;
-            return this;
-        }
-
-        public Builder eventProxy(HlsEventProxy eventProxy) {
-            this.eventProxy = eventProxy;
-            return this;
-        }
-
-        public Builder eventHandler(Handler eventHandler) {
-            this.eventHandler = eventHandler;
-            return this;
-        }
-
-        public Builder bufferSegmentSize(int size) {
-            bufferSegmentSize = size;
-            return this;
-        }
-
-        public Builder bufferSegmentCount(int count) {
-            bufferSegmentCount = count;
-            return this;
-        }
-
-        public HlsRendererBuilder build() {
-            if (TextUtils.isEmpty(userAgent)) {
-                throw new IllegalArgumentException("UserAgent must not be null.");
-            }
-            if (uri == null) {
-                throw new IllegalArgumentException("Url must not be null.");
-            }
-            if (eventHandler == null) {
-                eventHandler = new Handler(Looper.getMainLooper());
-            }
-            if (eventProxy == null) {
-                eventProxy = new HlsEventProxy();
-            }
-            return new HlsRendererBuilder(this);
-        }
     }
 
 }
