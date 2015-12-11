@@ -19,11 +19,15 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile ('com.google.android.exoplayer:exoplayer:r1.5.2@aar'){
+    compile ('com.google.android.exoplayer:exoplayer:r1.5.3@aar'){
         exclude module: 'dexmaker'
         exclude module: 'dexmaker-mockito'
         exclude module: 'mockito-core'
     }
+}
+
+afterEvaluate {
+    tasks.findByPath(":player:androidJavadocs").enabled = false
 }
 
 android.libraryVariants.all { variant ->
