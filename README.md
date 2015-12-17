@@ -38,8 +38,12 @@ public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
     videoTexturePresenter = new VideoTexturePresenter(videoTextureView);
     videoTexturePresenter.onCreate();
-    VideoSource source = new VideoSource(Uri.parse("hls playlist url."), VideoSource.Type.HLS);
-    videoTexturePresenter.setSource(source, "UserAgent");
+    VideoSource source = HlsVideoSource
+                .newBuilder(Uri.parse("hls playlist url."), "UserAgent")
+                .bufferSegmentSize(64 * 1024)
+                .bufferSegmentCount(512)
+                .build();
+    videoTexturePresenter.setSource(source);
     videoTexturePresenter.prepare();
 }
 
