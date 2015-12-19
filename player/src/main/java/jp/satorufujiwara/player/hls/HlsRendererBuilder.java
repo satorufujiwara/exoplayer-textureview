@@ -120,7 +120,8 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             final LoadControl loadControl = new DefaultLoadControl(
                     new DefaultAllocator(rendererBuilder.bufferSegmentSize));
 
-            final LimitedBandwidthMeter bandwidthMeter = new LimitedBandwidthMeter();
+            final LimitedBandwidthMeter bandwidthMeter = new LimitedBandwidthMeter(handler,
+                    eventProxy);
             bandwidthMeter.setLimitBitrate(limitBitrate);
             rendererBuilder.bandwidthMeter = bandwidthMeter;
 
