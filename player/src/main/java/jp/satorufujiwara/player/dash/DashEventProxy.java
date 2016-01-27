@@ -23,7 +23,7 @@ public class DashEventProxy extends EventProxy implements DashChunkSource.EventL
 
     /** DashChunkSource.EventListener */
     @Override
-    public void onAvailableRangeChanged(TimeRange timeRange) {
+    public void onAvailableRangeChanged(int sourceId, TimeRange timeRange) {
         if (infoListener != null) {
             infoListener.onAvailableRangeChanged(timeRange);
         }

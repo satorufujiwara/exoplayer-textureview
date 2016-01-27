@@ -1,6 +1,7 @@
 package jp.satorufujiwara.player.assets;
 
 import com.google.android.exoplayer.MediaCodecAudioTrackRenderer;
+import com.google.android.exoplayer.MediaCodecSelector;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
@@ -12,6 +13,7 @@ import com.google.android.exoplayer.upstream.DefaultAllocator;
 import com.google.android.exoplayer.upstream.DefaultUriDataSource;
 
 import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaCodec;
 import android.net.Uri;
 import android.os.Handler;
@@ -42,11 +44,13 @@ public class AssetsRendererBuilder extends RendererBuilder<AssetsEventProxy> {
         ExtractorSampleSource sampleSource = new ExtractorSampleSource(uri, dataSource,
                 allocator, bufferSegmentSize * bufferSegmentCount);
         MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
-                sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000,
+                sampleSource, MediaCodecSelector.DEFAULT,
+                MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000,
                 eventHandler, eventProxy, 50);
         MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
-                null, true, eventHandler, eventProxy,
-                AudioCapabilities.getCapabilities(context));
+                MediaCodecSelector.DEFAULT, null, true, eventHandler, eventProxy,
+                AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
+
         TrackRenderer textRenderer = new TextTrackRenderer(sampleSource, eventProxy,
                 eventHandler.getLooper());
 
