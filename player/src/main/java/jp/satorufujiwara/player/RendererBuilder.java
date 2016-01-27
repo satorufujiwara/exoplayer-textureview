@@ -9,6 +9,7 @@ public abstract class RendererBuilder<T extends EventProxy> {
 
     public static final int DEFAULT_BUFFER_SEGMENT_SIZE = 64 * 1024;
     public static final int DEFAULT_BUFFER_SEGMENT_COUNT = 256;
+    public static final int DEFAULT_TEXT_BUFFER_SEGMENT_COUNT = 2;
 
     public final Context context;
     public final Handler eventHandler;
