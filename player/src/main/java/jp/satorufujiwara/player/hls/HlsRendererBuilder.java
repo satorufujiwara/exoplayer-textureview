@@ -3,18 +3,22 @@ package jp.satorufujiwara.player.hls;
 import com.google.android.exoplayer.DefaultLoadControl;
 import com.google.android.exoplayer.LoadControl;
 import com.google.android.exoplayer.MediaCodecAudioTrackRenderer;
+import com.google.android.exoplayer.MediaCodecSelector;
 import com.google.android.exoplayer.MediaCodecUtil.DecoderQueryException;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.chunk.VideoFormatSelectorUtil;
+import com.google.android.exoplayer.hls.DefaultHlsTrackSelector;
 import com.google.android.exoplayer.hls.HlsChunkSource;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.hls.HlsPlaylist;
 import com.google.android.exoplayer.hls.HlsPlaylistParser;
 import com.google.android.exoplayer.hls.HlsSampleSource;
+import com.google.android.exoplayer.hls.PtsTimestampAdjusterProvider;
 import com.google.android.exoplayer.metadata.Id3Parser;
 import com.google.android.exoplayer.metadata.MetadataTrackRenderer;
+import com.google.android.exoplayer.text.TextTrackRenderer;
 import com.google.android.exoplayer.text.eia608.Eia608TrackRenderer;
 import com.google.android.exoplayer.upstream.DataSource;
 import com.google.android.exoplayer.upstream.DefaultAllocator;
@@ -23,6 +27,7 @@ import com.google.android.exoplayer.util.ManifestFetcher;
 import com.google.android.exoplayer.util.ManifestFetcher.ManifestCallback;
 
 import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaCodec;
 import android.net.Uri;
 import android.os.Handler;
@@ -43,13 +48,15 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
     long limitBitrate = Long.MAX_VALUE;
     LimitedBandwidthMeter bandwidthMeter;
     final HlsChunkSourceCreator hlsChunkSourceCreator;
+    final int textBufferSegmentCount;
     private AsyncRendererBuilder currentAsyncBuilder;
 
     HlsRendererBuilder(Context context, Handler eventHandler, HlsEventProxy eventProxy,
             String userAgent, Uri uri, int bufferSegmentSize, int bufferSegmentCount,
-            HlsChunkSourceCreator hlsChunkSourceCreator) {
+            int textBufferSegmentCount, HlsChunkSourceCreator hlsChunkSourceCreator) {
         super(context, eventHandler, eventProxy, userAgent, uri, bufferSegmentSize,
                 bufferSegmentCount);
+        this.textBufferSegmentCount = textBufferSegmentCount;
         this.hlsChunkSourceCreator = hlsChunkSourceCreator;
     }
 
@@ -119,11 +126,12 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             final Handler handler = rendererBuilder.eventHandler;
             final LoadControl loadControl = new DefaultLoadControl(
                     new DefaultAllocator(rendererBuilder.bufferSegmentSize));
-
             final LimitedBandwidthMeter bandwidthMeter = new LimitedBandwidthMeter(handler,
                     eventProxy);
             bandwidthMeter.setLimitBitrate(limitBitrate);
             rendererBuilder.bandwidthMeter = bandwidthMeter;
+            PtsTimestampAdjusterProvider timestampAdjusterProvider
+                    = new PtsTimestampAdjusterProvider();
 
             int[] variantIndices = null;
             if (manifest instanceof HlsMasterPlaylist) {
@@ -136,39 +144,64 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
                     return;
                 }
             }
-
             final HlsEventProxy eventProxy = rendererBuilder.eventProxy;
+
+            // Build the video/audio/metadata renderers.
             final DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter,
                     rendererBuilder.userAgent);
             final HlsChunkSource chunkSource;
             if (rendererBuilder.hlsChunkSourceCreator != null) {
                 chunkSource = rendererBuilder.hlsChunkSourceCreator.create(dataSource,
-                        rendererBuilder.uri.toString(), manifest, bandwidthMeter, variantIndices);
-            } else {
-                chunkSource = new HlsChunkSource(dataSource,
                         rendererBuilder.uri.toString(), manifest, bandwidthMeter,
-                        variantIndices, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+                        timestampAdjusterProvider, variantIndices);
+            } else {
+                chunkSource = new HlsChunkSource(true /* isMaster */, dataSource,
+                        rendererBuilder.uri.toString(), manifest,
+                        DefaultHlsTrackSelector.newDefaultInstance(context), bandwidthMeter,
+                        timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+
             }
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
                     rendererBuilder.bufferSegmentSize * rendererBuilder
                             .bufferSegmentCount, handler, eventProxy, Player.TYPE_VIDEO);
             MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
-                    sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, handler,
-                    eventProxy, 50);
+                    sampleSource, MediaCodecSelector.DEFAULT,
+                    MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, handler, eventProxy, 50);
             MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(
-                    sampleSource,
-                    null, true, handler, eventProxy, AudioCapabilities.getCapabilities(context));
+                    sampleSource, MediaCodecSelector.DEFAULT, null, true, handler, eventProxy,
+                    AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
             MetadataTrackRenderer<Map<String, Object>> id3Renderer = new MetadataTrackRenderer<>(
                     sampleSource, new Id3Parser(), eventProxy, handler.getLooper());
-            Eia608TrackRenderer closedCaptionRenderer = new Eia608TrackRenderer(sampleSource,
-                    eventProxy,
-                    handler.getLooper());
+
+            // Build the text renderer, preferring Webvtt where available.
+            boolean preferWebvtt = false;
+            if (manifest instanceof HlsMasterPlaylist) {
+                preferWebvtt = !((HlsMasterPlaylist) manifest).subtitles.isEmpty();
+            }
+            TrackRenderer textRenderer;
+            if (preferWebvtt) {
+                DataSource textDataSource = new DefaultUriDataSource(context, bandwidthMeter,
+                        userAgent);
+                HlsChunkSource textChunkSource = new HlsChunkSource(false /* isMaster */,
+                        textDataSource, rendererBuilder.uri.toString(), manifest,
+                        DefaultHlsTrackSelector.newVttInstance(), bandwidthMeter,
+                        timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+                HlsSampleSource textSampleSource = new HlsSampleSource(textChunkSource, loadControl,
+                        rendererBuilder.textBufferSegmentCount * bufferSegmentSize, handler,
+                        eventProxy,
+                        Player.TYPE_TEXT);
+                textRenderer = new TextTrackRenderer(textSampleSource, eventProxy,
+                        handler.getLooper());
+            } else {
+                textRenderer = new Eia608TrackRenderer(sampleSource, eventProxy,
+                        handler.getLooper());
+            }
 
             TrackRenderer[] renderers = new TrackRenderer[Player.RENDERER_COUNT];
             renderers[Player.TYPE_VIDEO] = videoRenderer;
             renderers[Player.TYPE_AUDIO] = audioRenderer;
             renderers[Player.TYPE_METADATA] = id3Renderer;
-            renderers[Player.TYPE_TEXT] = closedCaptionRenderer;
+            renderers[Player.TYPE_TEXT] = textRenderer;
             callback.onRenderers(renderers, bandwidthMeter);
         }
 

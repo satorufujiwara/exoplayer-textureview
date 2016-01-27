@@ -14,18 +14,21 @@ public class HlsVideoSource extends VideoSource {
 
     private final HlsEventProxy eventProxy;
     private final HlsChunkSourceCreator hlsChunkSourceCreator;
+    private final int textBufferSegmentSize;
 
     private HlsVideoSource(Builder builder) {
         super(builder.uri, builder.userAgent, builder.eventHandler, builder.bufferSegmentSize,
                 builder.bufferSegmentCount);
         eventProxy = builder.eventProxy;
         hlsChunkSourceCreator = builder.hlsChunkSourceCreator;
+        textBufferSegmentSize = builder.textBufferSegmentCount;
     }
 
     @Override
     public RendererBuilder createRendererBuilder(Context context) {
         return new HlsRendererBuilder(context, eventHandler, eventProxy, userAgent, uri,
-                bufferSegmentSize, bufferSegmentCount, hlsChunkSourceCreator);
+                bufferSegmentSize, bufferSegmentCount, textBufferSegmentSize,
+                hlsChunkSourceCreator);
     }
 
     public static Builder newBuilder(final Uri uri, final String userAgent) {
@@ -40,6 +43,7 @@ public class HlsVideoSource extends VideoSource {
         Handler eventHandler;
         int bufferSegmentSize = RendererBuilder.DEFAULT_BUFFER_SEGMENT_SIZE;
         int bufferSegmentCount = RendererBuilder.DEFAULT_BUFFER_SEGMENT_COUNT;
+        int textBufferSegmentCount = RendererBuilder.DEFAULT_TEXT_BUFFER_SEGMENT_COUNT;
         HlsChunkSourceCreator hlsChunkSourceCreator;
 
         private Builder(final Uri uri, final String userAgent) {
@@ -64,6 +68,11 @@ public class HlsVideoSource extends VideoSource {
 
         public Builder bufferSegmentCount(int count) {
             bufferSegmentCount = count;
+            return this;
+        }
+
+        public Builder textBufferSegmentCount(int count) {
+            textBufferSegmentCount = count;
             return this;
         }
 
