@@ -1,6 +1,10 @@
 Change Log
 ===
 
+0.6.2
+---
+* Update Exoplayer to 1.5.6
+
 0.6.1
 ---
 * Update Exoplayer to 1.5.5
