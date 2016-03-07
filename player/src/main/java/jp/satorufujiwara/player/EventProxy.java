@@ -8,6 +8,7 @@ import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioTrack;
 import com.google.android.exoplayer.chunk.Format;
 import com.google.android.exoplayer.metadata.MetadataTrackRenderer;
+import com.google.android.exoplayer.metadata.id3.Id3Frame;
 import com.google.android.exoplayer.text.Cue;
 import com.google.android.exoplayer.text.TextRenderer;
 import com.google.android.exoplayer.upstream.BandwidthMeter;
@@ -17,12 +18,11 @@ import android.media.MediaCodec;
 import android.view.Surface;
 
 import java.util.List;
-import java.util.Map;
 
 public class EventProxy implements
         RendererBuilderCallback,
         TextRenderer,
-        MetadataTrackRenderer.MetadataRenderer<Map<String, Object>>,
+        MetadataTrackRenderer.MetadataRenderer<List<Id3Frame>>,
         BandwidthMeter.EventListener,
         MediaCodecVideoTrackRenderer.EventListener,
         MediaCodecAudioTrackRenderer.EventListener,
@@ -76,7 +76,7 @@ public class EventProxy implements
      */
     public interface Id3MetadataListener {
 
-        void onId3Metadata(Map<String, Object> metadata);
+        void onId3Metadata(List<Id3Frame> id3Frames);
     }
 
     private InfoListener infoListener;
@@ -151,9 +151,9 @@ public class EventProxy implements
 
     /** MetadataTrackRenderer.MetadataRenderer */
     @Override
-    public void onMetadata(Map<String, Object> metadata) {
+    public void onMetadata(List<Id3Frame> id3Frames) {
         if (id3MetadataListener != null && !player.isDisabledTrack(Player.TYPE_METADATA)) {
-            id3MetadataListener.onId3Metadata(metadata);
+            id3MetadataListener.onId3Metadata(id3Frames);
         }
     }
 
