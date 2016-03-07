@@ -53,11 +53,14 @@ public class HlsEventProxy extends EventProxy implements HlsSampleSource.EventLi
 
     /** HlsSampleSource.EventListener */
     @Override
-    public void onLoadCompleted(int sourceId, long bytesLoaded, int type, int trigger, Format format,
-            long mediaStartTimeMs, long mediaEndTimeMs, long elapsedRealtimeMs, long loadDurationMs) {
+    public void onLoadCompleted(int sourceId, long bytesLoaded, int type, int trigger,
+            Format format,
+            long mediaStartTimeMs, long mediaEndTimeMs, long elapsedRealtimeMs,
+            long loadDurationMs) {
         if (infoListener != null) {
-            infoListener.onLoadCompleted(sourceId, bytesLoaded, type, trigger, format, mediaStartTimeMs,
-                    mediaEndTimeMs, elapsedRealtimeMs, loadDurationMs);
+            infoListener
+                    .onLoadCompleted(sourceId, bytesLoaded, type, trigger, format, mediaStartTimeMs,
+                            mediaEndTimeMs, elapsedRealtimeMs, loadDurationMs);
         }
     }
 
@@ -83,7 +86,8 @@ public class HlsEventProxy extends EventProxy implements HlsSampleSource.EventLi
 
     /** HlsSampleSource.EventListener */
     @Override
-    public void onDownstreamFormatChanged(int sourceId, Format format, int trigger, long mediaTimeMs) {
+    public void onDownstreamFormatChanged(int sourceId, Format format, int trigger,
+            long mediaTimeMs) {
         if (infoListener == null) {
             return;
         }
