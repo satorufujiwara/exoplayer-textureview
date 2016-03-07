@@ -50,7 +50,7 @@ public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
 @Override
 public void onDestroyView() {
     videoTexturePresenter.release();
-    videoTexturePresenter.onDestory();
+    videoTexturePresenter.onDestroy();
     super.onDestroyView();
 }
 ```
