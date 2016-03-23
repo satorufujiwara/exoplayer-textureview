@@ -36,6 +36,7 @@ import android.os.Handler;
 import java.io.IOException;
 import java.util.List;
 
+import jp.satorufujiwara.player.DataSourceCreator;
 import jp.satorufujiwara.player.LimitedBandwidthMeter;
 import jp.satorufujiwara.player.Player;
 import jp.satorufujiwara.player.RendererBuilder;
@@ -48,16 +49,19 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
     long limitBitrate = Long.MAX_VALUE;
     LimitedBandwidthMeter bandwidthMeter;
+    final DataSourceCreator dataSourceCreator;
     final HlsChunkSourceCreator hlsChunkSourceCreator;
     final int textBufferSegmentCount;
     private AsyncRendererBuilder currentAsyncBuilder;
 
     HlsRendererBuilder(Context context, Handler eventHandler, HlsEventProxy eventProxy,
             String userAgent, Uri uri, int bufferSegmentSize, int bufferSegmentCount,
-            int textBufferSegmentCount, HlsChunkSourceCreator hlsChunkSourceCreator) {
+            int textBufferSegmentCount, DataSourceCreator dataSourceCreator,
+            HlsChunkSourceCreator hlsChunkSourceCreator) {
         super(context, eventHandler, eventProxy, userAgent, uri, bufferSegmentSize,
                 bufferSegmentCount);
         this.textBufferSegmentCount = textBufferSegmentCount;
+        this.dataSourceCreator = dataSourceCreator;
         this.hlsChunkSourceCreator = hlsChunkSourceCreator;
     }
 
@@ -148,8 +152,15 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             final HlsEventProxy eventProxy = rendererBuilder.eventProxy;
 
             // Build the video/audio/metadata renderers.
-            final DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter,
-                    rendererBuilder.userAgent);
+            final DataSource dataSource;
+            if (rendererBuilder.dataSourceCreator != null) {
+                dataSource = rendererBuilder.dataSourceCreator.create(context, bandwidthMeter,
+                        rendererBuilder.userAgent);
+            } else {
+                dataSource = new DefaultUriDataSource(context, bandwidthMeter,
+                        rendererBuilder.userAgent);
+            }
+
             final HlsChunkSource chunkSource;
             if (rendererBuilder.hlsChunkSourceCreator != null) {
                 chunkSource = rendererBuilder.hlsChunkSourceCreator.create(dataSource,
