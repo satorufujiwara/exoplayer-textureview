@@ -7,12 +7,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
+import jp.satorufujiwara.player.DataSourceCreator;
 import jp.satorufujiwara.player.RendererBuilder;
 import jp.satorufujiwara.player.VideoSource;
 
 public class HlsVideoSource extends VideoSource {
 
     private final HlsEventProxy eventProxy;
+    private final DataSourceCreator dataSourceCreator;
     private final HlsChunkSourceCreator hlsChunkSourceCreator;
     private final int textBufferSegmentSize;
 
@@ -20,6 +22,7 @@ public class HlsVideoSource extends VideoSource {
         super(builder.uri, builder.userAgent, builder.eventHandler, builder.bufferSegmentSize,
                 builder.bufferSegmentCount);
         eventProxy = builder.eventProxy;
+        dataSourceCreator = builder.dataSourceCreator;
         hlsChunkSourceCreator = builder.hlsChunkSourceCreator;
         textBufferSegmentSize = builder.textBufferSegmentCount;
     }
@@ -28,7 +31,7 @@ public class HlsVideoSource extends VideoSource {
     public RendererBuilder createRendererBuilder(Context context) {
         return new HlsRendererBuilder(context, eventHandler, eventProxy, userAgent, uri,
                 bufferSegmentSize, bufferSegmentCount, textBufferSegmentSize,
-                hlsChunkSourceCreator);
+                dataSourceCreator, hlsChunkSourceCreator);
     }
 
     public static Builder newBuilder(final Uri uri, final String userAgent) {
@@ -44,6 +47,7 @@ public class HlsVideoSource extends VideoSource {
         int bufferSegmentSize = RendererBuilder.DEFAULT_BUFFER_SEGMENT_SIZE;
         int bufferSegmentCount = RendererBuilder.DEFAULT_BUFFER_SEGMENT_COUNT;
         int textBufferSegmentCount = RendererBuilder.DEFAULT_TEXT_BUFFER_SEGMENT_COUNT;
+        DataSourceCreator dataSourceCreator;
         HlsChunkSourceCreator hlsChunkSourceCreator;
 
         private Builder(final Uri uri, final String userAgent) {
@@ -73,6 +77,11 @@ public class HlsVideoSource extends VideoSource {
 
         public Builder textBufferSegmentCount(int count) {
             textBufferSegmentCount = count;
+            return this;
+        }
+
+        public Builder dataSourceCreator(DataSourceCreator creator) {
+            dataSourceCreator = creator;
             return this;
         }
 
