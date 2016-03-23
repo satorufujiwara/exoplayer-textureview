@@ -1,6 +1,10 @@
 Change Log
 ===
 
+0.6.3
+---
+* Add `DataSourceCreator` to `HlsVideoSource.Builder`
+
 0.6.2
 ---
 * Update Exoplayer to 1.5.6
