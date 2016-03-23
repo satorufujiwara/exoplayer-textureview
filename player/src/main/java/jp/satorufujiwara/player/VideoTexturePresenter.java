@@ -214,16 +214,40 @@ public class VideoTexturePresenter implements Player.Listener,
         }
     }
 
+    public void removeOnStateChangedListener(OnStateChangedListener l) {
+        onStateChangedListeners.remove(l);
+    }
+
+    public void clearAllOnStateChangedListener() {
+        onStateChangedListeners.clear();
+    }
+
     public void addOnErrorListener(OnErrorListener l) {
         if (l != null) {
             onErrorListeners.add(l);
         }
     }
 
+    public void removeOnErrorListener(OnErrorListener l) {
+        onErrorListeners.remove(l);
+    }
+
+    public void clearOnErrorListener() {
+        onErrorListeners.clear();
+    }
+
     public void addOnVideoSizeChangedListener(OnVideoSizeChangedListener l) {
         if (l != null) {
             onVideoSizeChangedListeners.add(l);
         }
+    }
+
+    public void removeOnVideoSizeChangedListener(OnVideoSizeChangedListener l) {
+        onVideoSizeChangedListeners.remove(l);
+    }
+
+    public void clearOnVideoSizeChangedListener() {
+        onVideoSizeChangedListeners.clear();
     }
 
     private void fireOnStateChanged(final boolean playWhenReady, final int playbackState) {
