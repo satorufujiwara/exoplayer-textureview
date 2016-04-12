@@ -6,6 +6,7 @@ import com.google.android.exoplayer.MediaCodecAudioTrackRenderer;
 import com.google.android.exoplayer.MediaCodecSelector;
 import com.google.android.exoplayer.MediaCodecUtil.DecoderQueryException;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
+import com.google.android.exoplayer.SampleSource;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.chunk.VideoFormatSelectorUtil;
@@ -51,15 +52,17 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
     LimitedBandwidthMeter bandwidthMeter;
     final DataSourceCreator dataSourceCreator;
     final HlsChunkSourceCreator hlsChunkSourceCreator;
+    final int audioBufferSegmentCount;
     final int textBufferSegmentCount;
     private AsyncRendererBuilder currentAsyncBuilder;
 
     HlsRendererBuilder(Context context, Handler eventHandler, HlsEventProxy eventProxy,
             String userAgent, Uri uri, int bufferSegmentSize, int bufferSegmentCount,
-            int textBufferSegmentCount, DataSourceCreator dataSourceCreator,
-            HlsChunkSourceCreator hlsChunkSourceCreator) {
+            int audioBufferSegmentCount, int textBufferSegmentCount,
+            DataSourceCreator dataSourceCreator, HlsChunkSourceCreator hlsChunkSourceCreator) {
         super(context, eventHandler, eventProxy, userAgent, uri, bufferSegmentSize,
                 bufferSegmentCount);
+        this.audioBufferSegmentCount = audioBufferSegmentCount;
         this.textBufferSegmentCount = textBufferSegmentCount;
         this.dataSourceCreator = dataSourceCreator;
         this.hlsChunkSourceCreator = hlsChunkSourceCreator;
@@ -151,7 +154,15 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             }
             final HlsEventProxy eventProxy = rendererBuilder.eventProxy;
 
-            // Build the video/audio/metadata renderers.
+            boolean haveSubtitles = false;
+            boolean haveAudios = false;
+            if (manifest instanceof HlsMasterPlaylist) {
+                HlsMasterPlaylist masterPlaylist = (HlsMasterPlaylist) manifest;
+                haveSubtitles = !masterPlaylist.subtitles.isEmpty();
+                haveAudios = !masterPlaylist.audios.isEmpty();
+            }
+
+            // Build the video/metadata renderers.
             final DataSource dataSource;
             if (rendererBuilder.dataSourceCreator != null) {
                 dataSource = rendererBuilder.dataSourceCreator.create(context, bandwidthMeter,
@@ -174,29 +185,48 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
 
             }
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
-                    rendererBuilder.bufferSegmentSize * rendererBuilder
-                            .bufferSegmentCount, handler, eventProxy, Player.TYPE_VIDEO);
+                    rendererBuilder.bufferSegmentSize * rendererBuilder.bufferSegmentCount,
+                    handler, eventProxy, Player.TYPE_VIDEO);
             MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
                     sampleSource, MediaCodecSelector.DEFAULT,
                     MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, handler, eventProxy, 50);
-            MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(
-                    sampleSource, MediaCodecSelector.DEFAULT, null, true, handler, eventProxy,
-                    AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
             MetadataTrackRenderer<List<Id3Frame>> id3Renderer = new MetadataTrackRenderer<>(
                     sampleSource, new Id3Parser(), eventProxy, handler.getLooper());
 
-            // Build the text renderer, preferring Webvtt where available.
-            boolean preferWebvtt = false;
-            if (manifest instanceof HlsMasterPlaylist) {
-                preferWebvtt = !((HlsMasterPlaylist) manifest).subtitles.isEmpty();
+            // Build the audio renderer.
+            MediaCodecAudioTrackRenderer audioRenderer;
+            if (haveAudios) {
+                DataSource audioDataSource = new DefaultUriDataSource(context, bandwidthMeter,
+                        userAgent);
+                HlsChunkSource audioChunkSource = new HlsChunkSource(false /* isMaster */,
+                        audioDataSource,
+                        rendererBuilder.uri.toString(), manifest,
+                        DefaultHlsTrackSelector.newAudioInstance(),
+                        bandwidthMeter, timestampAdjusterProvider,
+                        HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+                HlsSampleSource audioSampleSource = new HlsSampleSource(audioChunkSource,
+                        loadControl,
+                        rendererBuilder.bufferSegmentSize * rendererBuilder.audioBufferSegmentCount,
+                        handler, eventProxy, Player.TYPE_AUDIO);
+                audioRenderer = new MediaCodecAudioTrackRenderer(
+                        new SampleSource[]{sampleSource, audioSampleSource},
+                        MediaCodecSelector.DEFAULT, null,
+                        true, handler, eventProxy, AudioCapabilities.getCapabilities(context),
+                        AudioManager.STREAM_MUSIC);
+            } else {
+                audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
+                        MediaCodecSelector.DEFAULT, null, true, handler, eventProxy,
+                        AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
             }
+
+            // Build the text renderer.
             TrackRenderer textRenderer;
-            if (preferWebvtt) {
+            if (haveSubtitles) {
                 DataSource textDataSource = new DefaultUriDataSource(context, bandwidthMeter,
                         userAgent);
                 HlsChunkSource textChunkSource = new HlsChunkSource(false /* isMaster */,
                         textDataSource, rendererBuilder.uri.toString(), manifest,
-                        DefaultHlsTrackSelector.newVttInstance(), bandwidthMeter,
+                        DefaultHlsTrackSelector.newSubtitleInstance(), bandwidthMeter,
                         timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
                 HlsSampleSource textSampleSource = new HlsSampleSource(textChunkSource, loadControl,
                         rendererBuilder.textBufferSegmentCount * bufferSegmentSize, handler,

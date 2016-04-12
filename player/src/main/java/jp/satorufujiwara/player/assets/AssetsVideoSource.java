@@ -37,7 +37,7 @@ public class AssetsVideoSource extends VideoSource {
         AssetsEventProxy eventProxy;
         Handler eventHandler;
         int bufferSegmentSize = RendererBuilder.DEFAULT_BUFFER_SEGMENT_SIZE;
-        int bufferSegmentCount = RendererBuilder.DEFAULT_BUFFER_SEGMENT_COUNT;
+        int bufferSegmentCount = RendererBuilder.DEFAULT_MAIN_BUFFER_SEGMENT_COUNT;
 
         private Builder(final Uri uri, final String userAgent) {
             this.uri = uri;
