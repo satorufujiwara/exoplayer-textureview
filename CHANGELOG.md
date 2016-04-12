@@ -1,6 +1,10 @@
 Change Log
 ===
 
+0.6.4
+---
+* Add remove and clear listener functions to `VideoTexturePresenter`
+
 0.6.3
 ---
 * Add `DataSourceCreator` to `HlsVideoSource.Builder`
