@@ -14,7 +14,7 @@ public class LimitedBandwidthMeter implements BandwidthMeter {
 
     private long limitBitrate = Long.MAX_VALUE;
     private final Handler eventHandler;
-    private final EventListener eventListener;
+    private final BandwidthMeter.EventListener eventListener;
     private final Clock clock;
     private final SlidingPercentile slidingPercentile;
     private long bytesAccumulator;

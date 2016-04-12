@@ -16,7 +16,8 @@ public class HlsVideoSource extends VideoSource {
     private final HlsEventProxy eventProxy;
     private final DataSourceCreator dataSourceCreator;
     private final HlsChunkSourceCreator hlsChunkSourceCreator;
-    private final int textBufferSegmentSize;
+    private final int audioBufferSegmentCount;
+    private final int textBufferSegmentCount;
 
     private HlsVideoSource(Builder builder) {
         super(builder.uri, builder.userAgent, builder.eventHandler, builder.bufferSegmentSize,
@@ -24,14 +25,15 @@ public class HlsVideoSource extends VideoSource {
         eventProxy = builder.eventProxy;
         dataSourceCreator = builder.dataSourceCreator;
         hlsChunkSourceCreator = builder.hlsChunkSourceCreator;
-        textBufferSegmentSize = builder.textBufferSegmentCount;
+        audioBufferSegmentCount = builder.audioBufferSegmentCount;
+        textBufferSegmentCount = builder.textBufferSegmentCount;
     }
 
     @Override
     public RendererBuilder createRendererBuilder(Context context) {
         return new HlsRendererBuilder(context, eventHandler, eventProxy, userAgent, uri,
-                bufferSegmentSize, bufferSegmentCount, textBufferSegmentSize,
-                dataSourceCreator, hlsChunkSourceCreator);
+                bufferSegmentSize, bufferSegmentCount, textBufferSegmentCount,
+                audioBufferSegmentCount, dataSourceCreator, hlsChunkSourceCreator);
     }
 
     public static Builder newBuilder(final Uri uri, final String userAgent) {
@@ -45,7 +47,8 @@ public class HlsVideoSource extends VideoSource {
         HlsEventProxy eventProxy;
         Handler eventHandler;
         int bufferSegmentSize = RendererBuilder.DEFAULT_BUFFER_SEGMENT_SIZE;
-        int bufferSegmentCount = RendererBuilder.DEFAULT_BUFFER_SEGMENT_COUNT;
+        int bufferSegmentCount = RendererBuilder.DEFAULT_MAIN_BUFFER_SEGMENT_COUNT;
+        int audioBufferSegmentCount = RendererBuilder.DEFAULT_AUDIO_BUFFER_SEGMENTS;
         int textBufferSegmentCount = RendererBuilder.DEFAULT_TEXT_BUFFER_SEGMENT_COUNT;
         DataSourceCreator dataSourceCreator;
         HlsChunkSourceCreator hlsChunkSourceCreator;
@@ -72,6 +75,11 @@ public class HlsVideoSource extends VideoSource {
 
         public Builder bufferSegmentCount(int count) {
             bufferSegmentCount = count;
+            return this;
+        }
+
+        public Builder audioBufferSegmentCount(int count) {
+            audioBufferSegmentCount = count;
             return this;
         }
 
