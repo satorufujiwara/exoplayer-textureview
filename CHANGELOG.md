@@ -3,6 +3,10 @@ Change Log
 
 0.6.4
 ---
+* Update Exoplayer to 1.5.7
+
+0.6.4
+---
 * Add remove and clear listener functions to `VideoTexturePresenter`
 
 0.6.3

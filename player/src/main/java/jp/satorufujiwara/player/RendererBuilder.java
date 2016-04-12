@@ -8,7 +8,8 @@ import android.os.Handler;
 public abstract class RendererBuilder<T extends EventProxy> {
 
     public static final int DEFAULT_BUFFER_SEGMENT_SIZE = 64 * 1024;
-    public static final int DEFAULT_BUFFER_SEGMENT_COUNT = 256;
+    public static final int DEFAULT_MAIN_BUFFER_SEGMENT_COUNT = 256;
+    public static final int DEFAULT_AUDIO_BUFFER_SEGMENTS = 54;
     public static final int DEFAULT_TEXT_BUFFER_SEGMENT_COUNT = 2;
 
     public final Context context;
