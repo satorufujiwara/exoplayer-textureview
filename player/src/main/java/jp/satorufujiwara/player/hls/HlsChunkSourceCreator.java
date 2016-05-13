@@ -8,7 +8,7 @@ import com.google.android.exoplayer.upstream.DataSource;
 
 public interface HlsChunkSourceCreator {
 
-    HlsChunkSource create(DataSource dataSource, String playlistUrl, HlsPlaylist playlist,
+    HlsChunkSource create(DataSource dataSource, HlsPlaylist playlist,
             BandwidthMeter bandwidthMeter, PtsTimestampAdjusterProvider timestampAdjusterProvider,
             int[] variantIndices);
 

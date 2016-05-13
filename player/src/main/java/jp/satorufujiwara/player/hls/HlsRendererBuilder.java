@@ -175,11 +175,9 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             final HlsChunkSource chunkSource;
             if (rendererBuilder.hlsChunkSourceCreator != null) {
                 chunkSource = rendererBuilder.hlsChunkSourceCreator.create(dataSource,
-                        rendererBuilder.uri.toString(), manifest, bandwidthMeter,
-                        timestampAdjusterProvider, variantIndices);
+                        manifest, bandwidthMeter, timestampAdjusterProvider, variantIndices);
             } else {
-                chunkSource = new HlsChunkSource(true /* isMaster */, dataSource,
-                        rendererBuilder.uri.toString(), manifest,
+                chunkSource = new HlsChunkSource(true /* isMaster */, dataSource, manifest,
                         DefaultHlsTrackSelector.newDefaultInstance(context), bandwidthMeter,
                         timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
 
@@ -199,8 +197,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
                 DataSource audioDataSource = new DefaultUriDataSource(context, bandwidthMeter,
                         userAgent);
                 HlsChunkSource audioChunkSource = new HlsChunkSource(false /* isMaster */,
-                        audioDataSource,
-                        rendererBuilder.uri.toString(), manifest,
+                        audioDataSource, manifest,
                         DefaultHlsTrackSelector.newAudioInstance(),
                         bandwidthMeter, timestampAdjusterProvider,
                         HlsChunkSource.ADAPTIVE_MODE_SPLICE);
@@ -225,7 +222,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
                 DataSource textDataSource = new DefaultUriDataSource(context, bandwidthMeter,
                         userAgent);
                 HlsChunkSource textChunkSource = new HlsChunkSource(false /* isMaster */,
-                        textDataSource, rendererBuilder.uri.toString(), manifest,
+                        textDataSource, manifest,
                         DefaultHlsTrackSelector.newSubtitleInstance(), bandwidthMeter,
                         timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
                 HlsSampleSource textSampleSource = new HlsSampleSource(textChunkSource, loadControl,
