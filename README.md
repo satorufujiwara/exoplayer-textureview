@@ -23,7 +23,7 @@ repositories {
     jcenter()
 }
 dependencies {
-    compile 'jp.satorufujiwara:exoplayer-textureview:0.6.7'
+    compile 'jp.satorufujiwara:exoplayer-textureview:0.6.8'
     compile 'com.google.android.exoplayer:exoplayer:r1.5.9'
 }
 ```
