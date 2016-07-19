@@ -23,6 +23,7 @@ public class VideoTexturePresenter implements Player.Listener,
     private RendererBuilder rendererBuilder;
     private long limitBitrate = Long.MAX_VALUE;
     private boolean playerNeedsPrepare;
+    private SurfaceTexture surfaceTexture;
 
     public VideoTexturePresenter(final VideoTextureView view) {
         this.textureView = view;
@@ -32,6 +33,7 @@ public class VideoTexturePresenter implements Player.Listener,
                     @Override
                     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width,
                             int height) {
+                        surfaceTexture = surface;
                         if (player != null) {
                             player.setSurface(new Surface(surface));
                         }
@@ -45,6 +47,7 @@ public class VideoTexturePresenter implements Player.Listener,
 
                     @Override
                     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+                        surfaceTexture = null;
                         if (player != null) {
                             player.blockingClearSurface();
                         }
@@ -124,6 +127,9 @@ public class VideoTexturePresenter implements Player.Listener,
         if (player == null) {
             player = new Player();
             player.addListener(this);
+            if (surfaceTexture != null) {
+                player.setSurface(new Surface(surfaceTexture));
+            }
         }
         playerNeedsPrepare = true;
         if (rendererBuilder == null) {
