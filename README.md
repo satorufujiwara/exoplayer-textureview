@@ -4,8 +4,6 @@ exoplayer-textureview
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Download](https://api.bintray.com/packages/satorufujiwara/maven/exoplayer-textureview/images/download.svg)](https://bintray.com/satorufujiwara/maven/exoplayer-textureview/_latestVersion)
 
-*This library is experimental. API and all codes will be changed without notice*
-
 [ExoPlayer](https://github.com/google/ExoPlayer)'s wrapper for using with TextureView.
 
 ExoPlayer's version is [r1.5.9](https://github.com/google/ExoPlayer/blob/master/RELEASENOTES.md#r159)
