@@ -1,6 +1,10 @@
 Change Log
 ===
 
+0.6.8
+---
+* Fix player have no surface when setSource is called after surface created.
+
 0.6.7
 ---
 * Update Exoplayer to 1.5.9
