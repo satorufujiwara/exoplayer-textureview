@@ -179,7 +179,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
             } else {
                 chunkSource = new HlsChunkSource(true /* isMaster */, dataSource, manifest,
                         DefaultHlsTrackSelector.newDefaultInstance(context), bandwidthMeter,
-                        timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+                        timestampAdjusterProvider);
 
             }
             HlsSampleSource sampleSource = new HlsSampleSource(chunkSource, loadControl,
@@ -199,8 +199,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
                 HlsChunkSource audioChunkSource = new HlsChunkSource(false /* isMaster */,
                         audioDataSource, manifest,
                         DefaultHlsTrackSelector.newAudioInstance(),
-                        bandwidthMeter, timestampAdjusterProvider,
-                        HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+                        bandwidthMeter, timestampAdjusterProvider);
                 HlsSampleSource audioSampleSource = new HlsSampleSource(audioChunkSource,
                         loadControl,
                         rendererBuilder.bufferSegmentSize * rendererBuilder.audioBufferSegmentCount,
@@ -224,7 +223,7 @@ public class HlsRendererBuilder extends RendererBuilder<HlsEventProxy> {
                 HlsChunkSource textChunkSource = new HlsChunkSource(false /* isMaster */,
                         textDataSource, manifest,
                         DefaultHlsTrackSelector.newSubtitleInstance(), bandwidthMeter,
-                        timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+                        timestampAdjusterProvider);
                 HlsSampleSource textSampleSource = new HlsSampleSource(textChunkSource, loadControl,
                         rendererBuilder.textBufferSegmentCount * bufferSegmentSize, handler,
                         eventProxy,
